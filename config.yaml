@@ -1,0 +1,20 @@
+model: claude-sonnet-4-20250514
+max_tokens: 8000
+
+paths:
+  prompts_dir: 01_prompts
+  input_dir: input
+  output_concepts_dir: output/01_concepts
+  output_narrated_dir: output/02_narrated
+  output_rendered_dir: output/03_rendered
+  output_published_dir: output/04_published
+  logs_dir: logs
+  backups_outline_dir: logs/backups/outline
+  backups_expand_dir: logs/backups/expand
+
+pdf:
+  page_size: A4
+  margin_top: 20mm
+  margin_bottom: 20mm
+  margin_left: 18mm
+  margin_right: 18mm

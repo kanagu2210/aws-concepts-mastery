@@ -1,0 +1,19 @@
+cat > .gitignore << 'EOF'
+# secrets
+.env
+
+# generated output — delete and regenerate anytime
+output/
+logs/
+
+# python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# editor
+.vscode/
+.DS_Store
+EOF
