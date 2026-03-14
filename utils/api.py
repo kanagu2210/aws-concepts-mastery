@@ -30,6 +30,10 @@ _MAX_DELAY_S    = 60.0
 # HTTP status codes that warrant a retry
 _RETRYABLE_STATUS = {429, 500, 502, 503, 529}
 
+# Streaming is required for requests that may take > 10 minutes.
+# Use streaming for all calls to be safe — token accumulation is identical.
+_STREAM_THRESHOLD = 8000   # max_tokens above this uses streaming
+
 
 # ---------------------------------------------------------------------------
 # Client — created once at import time
@@ -49,8 +53,8 @@ def call_claude(
     """
     Call the Anthropic Messages API with a single user message.
 
-    The full prompt (with any injected variables and input content)
-    is passed as one combined string in the user turn.
+    Uses streaming for large max_tokens values (> _STREAM_THRESHOLD) to
+    avoid the 10-minute HTTP timeout on long-running requests.
 
     Args:
         user_content:  Complete message — prompt + input content combined.
@@ -67,19 +71,22 @@ def call_claude(
     model_name = model or config.model
     max_tok    = max_tokens or config.max_tokens
 
+    use_streaming = max_tok > _STREAM_THRESHOLD
+
     delay      = _BASE_DELAY_S
     last_error: Exception | None = None
 
     for attempt in range(1, _MAX_RETRIES + 1):
         try:
-            response = _client.messages.create(
-                model      = model_name,
-                max_tokens = max_tok,
-                messages   = [{"role": "user", "content": user_content}],
-            )
-
-            text = _extract_text(response)
-            return text, response.usage.input_tokens, response.usage.output_tokens
+            if use_streaming:
+                text, in_tok, out_tok = _call_streaming(
+                    model_name, max_tok, user_content
+                )
+            else:
+                text, in_tok, out_tok = _call_blocking(
+                    model_name, max_tok, user_content
+                )
+            return text, in_tok, out_tok
 
         except anthropic.RateLimitError as e:
             last_error = e
@@ -90,7 +97,6 @@ def call_claude(
                 last_error = e
                 _log_retry(attempt, f"HTTP {e.status_code}", delay)
             else:
-                # Non-retryable (400 bad request, 401 auth, etc.) — raise immediately
                 raise
 
         except anthropic.APIConnectionError as e:
@@ -108,11 +114,59 @@ def call_claude(
 
 
 # ---------------------------------------------------------------------------
+# Internal call implementations
+# ---------------------------------------------------------------------------
+
+def _call_blocking(
+    model: str,
+    max_tokens: int,
+    user_content: str,
+) -> tuple[str, int, int]:
+    """Standard blocking API call. Used for smaller requests."""
+    response = _client.messages.create(
+        model      = model,
+        max_tokens = max_tokens,
+        messages   = [{"role": "user", "content": user_content}],
+    )
+    text = _extract_text(response)
+    return text, response.usage.input_tokens, response.usage.output_tokens
+
+
+def _call_streaming(
+    model: str,
+    max_tokens: int,
+    user_content: str,
+) -> tuple[str, int, int]:
+    """
+    Streaming API call. Required for requests that may exceed 10 minutes.
+    Accumulates streamed text chunks and token counts from the final event.
+    """
+    parts: list[str] = []
+    in_tok  = 0
+    out_tok = 0
+
+    with _client.messages.stream(
+        model      = model,
+        max_tokens = max_tokens,
+        messages   = [{"role": "user", "content": user_content}],
+    ) as stream:
+        for text_chunk in stream.text_stream:
+            parts.append(text_chunk)
+
+        # Final message contains usage counts
+        final = stream.get_final_message()
+        in_tok  = final.usage.input_tokens
+        out_tok = final.usage.output_tokens
+
+    return "".join(parts).strip(), in_tok, out_tok
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 def _extract_text(response: anthropic.types.Message) -> str:
-    """Extract plain text from a response, joining multiple text blocks."""
+    """Extract plain text from a blocking response, joining multiple blocks."""
     parts: list[str] = []
     for block in response.content:
         if hasattr(block, "text"):

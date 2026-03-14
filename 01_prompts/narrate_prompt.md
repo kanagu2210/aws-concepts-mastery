@@ -89,14 +89,65 @@ commit to these three values. They determine everything.
 - L6 → knowledge complete, translating to exam/interview performance
 
 **3. depth_stage** — How deep does this go, and how long?
-- D1 → define and ground, 400–600 words
-- D2 → define plus one contrast, 500–700 words
-- D3 → brief definition, decision reasoning dominates, 650–900 words
-- D4 → design constraints and trade-offs dominate, 800–1100 words
-- D5 → scale and prescriptive recommendations dominate, 1000–1500 words
+- D1 → define and ground, 600–900 words
+- D2 → define plus one contrast, 800–1100 words
+- D3 → brief definition, decision reasoning dominates, 1100–1500 words
+- D4 → design constraints and trade-offs dominate, 1500–2000 words
+- D5 → scale and prescriptive recommendations dominate, 2000–2800 words
 
 Write these three values down internally before continuing.
 Every section below applies differently depending on them.
+
+---
+
+# CONTINUATION CONTEXT — MULTIPART NARRATION
+
+This section is only relevant when the script is being generated
+as one part of a multipart narration. If no continuation context
+is provided below, ignore this section entirely.
+
+When continuation context IS provided, it means:
+- This is part N of a larger script for the same concept
+- Part N-1 has already been generated and delivered to the room
+- The room has just heard the handoff line — they are mid-session
+
+**What this means for your output:**
+
+Do NOT open with an entry point. The entry point was part 1.
+Do NOT introduce the concept. The room already knows what it is.
+Do NOT use the real_world_analogy as an opener — it was used in part 1.
+  You may return to it briefly if it helps ground a new include,
+  but do not re-introduce it.
+
+DO open mid-flow, as if continuing a sentence the teacher just finished.
+DO pick up from exactly where the handoff line left off.
+DO treat the last paragraph of the previous part as the live landing
+  point — your first sentence should feel like the next breath after it.
+
+The handoff line and last paragraph of the previous part will be
+injected below as:
+
+HANDOFF LINE: <one sentence — the planned momentum point>
+PREVIOUS PART ENDING:
+<last paragraph of the previous part's actual output>
+
+Your opening must feel like a direct continuation of that ending —
+not a new beginning, not a transition announcement, not "as we
+discussed." Just the next thing the teacher says.
+
+**Landing line in multipart scripts:**
+
+Only the FINAL part ends with the landing line.
+All other parts end at a natural breath point — a moment of
+resolution on the current block of includes — but do not close
+the concept. The room knows there is more coming.
+
+A mid-script ending sounds like:
+"So that's the queue. Now — what happens when the consumer
+on the other end can't keep up? That's where things get interesting."
+
+Not like:
+"In summary, SQS is a managed message queue service that..."
 
 ---
 
@@ -115,12 +166,12 @@ That means:
 - Every sentence is written to be spoken, not read silently
 - The rhythm is conversational — short punchy sentences mix with
   longer ones that carry a full idea
-- Pauses, emphasis, and student interactions are scripted explicitly
+- Pauses and student interactions are scripted explicitly
 - The script never sounds like it was printed from a textbook
 
 ---
 
-# SCRIPT FORMAT — THREE ELEMENTS ONLY
+# SCRIPT FORMAT — TWO ELEMENTS ONLY
 
 **Speech paragraphs.** The words the teacher speaks, written as
 plain flowing text. No `TEACHER:` label. No `[PAUSE]` markers.
@@ -129,14 +180,11 @@ breath. A single sentence on its own line is not a mistake — it
 is often the right choice. Short single-sentence paragraphs land
 hard. Use them when a point needs to sit.
 
-**[Board: ...]** Something the teacher writes or draws on the board
-at this moment. One line. Keep it minimal — only things that
-genuinely help if visible while being explained.
-
-**[Check: ...]** A question directed at the room. Written as the
-exact words the teacher says. Must require a real answer — not
-"does everyone understand?" but something the student has to
-actually think about. See CHECK QUALITY RULES below.
+**[Pause: ...]** A moment where the teacher stops and gives the reader
+time to think. Written as a short prompt — one sentence naming what
+to sit with. Not a quiz. Not a question to answer out loud.
+A beat of deliberate reflection before the teaching continues.
+See PAUSE QUALITY RULES below.
 
 ---
 
@@ -152,8 +200,6 @@ Who here has seen a website go down?
 
 Most of you. Good. Because that's the problem we're solving today.
 
-`[Board: One thing fails → everything goes down]`
-
 When one thing fails and takes the whole system with it — that's a
 single point of failure. High availability says: we're not building
 systems like that anymore.
@@ -168,9 +214,7 @@ High availability means something different. It means the system
 recovers fast — fast enough that most users don't notice. Not zero
 downtime. Minimal downtime.
 
-`[Board: Fault tolerance = keeps running | High availability = recovers fast]`
-
-[Check: Your company's SLA says 99.9% uptime. You're designing the
+[Pause: Your company's SLA says 99.9% uptime. You're designing the
 database layer. Does that SLA require fault tolerance or high
 availability — and what's the difference in what you'd build?]
 
@@ -184,7 +228,7 @@ Notice:
 - Fragments used deliberately. "Most of you. Good."
 - The teacher thinks out loud before answering. "Here's the difference."
 - A hard pivot lands on its own line. "The answer matters."
-- The [Check:] requires applying the distinction to a real situation.
+- The [Pause:] gives the reader a beat to absorb the distinction before moving on.
 - No "Today we will cover..." No "It is important to note..."
 - The confusion is named and resolved — not avoided.
 
@@ -198,18 +242,18 @@ Notice:
 | `layer` | Sets the register (see LAYER REGISTER section) |
 | `spine_type` | Determines the script's structural shape (see SPINE_TYPE section) |
 | `exams` | Sets the ceiling on technical depth |
-| `interviews` | If true, the script ends with one interview framing line |
+| `interviews` | Not used in narration — informational only |
 | `concept_spine` | The central idea — the teacher returns to this throughout |
-| `real_world_analogy` | Introduced early, extended throughout — the mental model the room carries |
+| `real_world_analogy` | Read this field to understand what KIND of scenario fits the concept — scale, failure, cost, fan-out, etc. Then replace whatever specific analogy is written there with the closest matching scenario from the approved company list (see ANALOGY COMPANIES below). Do not use the field's analogy verbatim if it names a company or scenario outside the approved list. |
 | `bridge_from` | Opening lines if strong — use only when it creates real momentum |
 | `confusion_buster` | Surfaced early as a brief flag, then fully resolved in the middle |
 | `boundary.includes` | The teaching content — every include gets spoken and grounded |
 | `boundary.excludes` | Hard wall — if a student asks about these, the script has a deflection line |
 | `understanding.why_it_exists` | The "why does this matter" moment — grounded in real consequences |
-| `understanding.real_world_scenarios` | Used in [Check:] moments and worked examples |
+| `understanding.real_world_scenarios` | Used in [Pause:] moments and worked examples |
 | `understanding.common_misunderstandings` | Surface as student voice — "someone always thinks this" — state the wrong model, then correct it |
 | `links.often_confused_with` | Named briefly early — not fully resolved, just flagged |
-| `links.contrast_with` | Board comparison moment |
+| `links.contrast_with` | Named and contrasted in the prose — differences stated clearly |
 | `depth_stage` | D1–D2 = define and ground; D3 = contrast and apply; D4–D5 = design reasoning |
 | `cognitive_role` | Shapes what the script lingers on (see COGNITIVE ROLE section) |
 | `concept_tier` | foundation = slower pace; core = full treatment; extension = move faster |
@@ -227,7 +271,7 @@ The `layer` field sets the register and assumed knowledge of the room.
 | L3 — Service Mastery | The room understands the mechanisms. Now we add tools to the toolbox. Service purpose, boundaries, and cost are the focus. |
 | L4 — Decision Patterns | The room knows the services. Now we make choices. "You've got SQS and SNS in front of you — which one do you pick and why?" |
 | L5 — Architectural Patterns | The room can choose services. Now we compose them into systems. Worked design scenarios dominate. |
-| L6 — Exam and Interview Bridges | The room has the knowledge. Now we translate it to performance. Exam traps, distractor patterns, interview framing. |
+| L6 — Exam and Interview Bridges | The room has the knowledge. Now we translate it to performance. Focus on precise distinctions and common confusions. |
 
 Never teach below the layer's register. A L4 script that explains
 what SQS is from scratch is wrong — the room already knows.
@@ -245,7 +289,6 @@ The script walks through a framework part by part.
 Each part gets its own moment — introduced, grounded in the analogy,
 connected to the next part.
 The teacher reveals the framework progressively — not all at once.
-The [Board:] moment shows the framework's structure.
 The landing line shows how the parts form a whole.
 Good entry points: lead with the problem the framework solves,
 or lead with the confusion it resolves.
@@ -258,10 +301,9 @@ The most common type — no special structural constraint.
 **contrast**
 The comparison is the spine of the entire script.
 Both things are introduced early — never just one then the other late.
-The [Board:] moment shows them side by side.
 The decision rule is stated clearly and repeated.
-At least one [Check:] asks the room to apply the decision rule
-to a scenario before the teacher gives the answer.
+At least one [Pause:] gives the reader a moment to apply the
+decision rule to a scenario before the teacher works through it.
 The landing line is the decision rule, compressed.
 Good entry points: lead with the confusion, or lead with a scenario
 where the wrong choice has consequences.
@@ -270,13 +312,30 @@ where the wrong choice has consequences.
 The script is a design walkthrough.
 A real business scenario is established first — name the company,
 the load, the failure mode being designed around.
+
+Before introducing any individual service, give the room the whole
+picture in one paragraph: what the full system does end-to-end,
+what a request experiences from arrival to completion, and what
+each major piece's job is in that journey. One paragraph — not a
+list of components, a narrative of flow. Every service introduced
+later gets anchored to this picture, not introduced as a new topic.
+
 Then the services are introduced one by one in the order data flows
 through the system.
 Each service's role is explained in the context of the scenario —
 not in the abstract.
-[Check:] moments ask "what happens if this service fails?" or
-"why this service and not that one?"
+[Pause:] moments ask "what happens if this service fails?" or
+"why this service and not that one?" — giving the reader a beat
+to think through the answer before the teacher explains it.
 The landing line names the pattern and what problem it solves.
+
+**Symmetry rule for pattern scripts:** Every mechanism described
+in one direction must be described with equal depth in the other
+direction. If scale-out gets a step-by-step timeline, scale-in
+gets a step-by-step timeline. If AZ failure during high load is
+explained, AZ recovery is addressed. The reader should never feel
+that one half of a mechanism was explained and the other half
+was only referenced. Reference is not explanation.
 
 **bridge**
 The script is coaching, not teaching.
@@ -285,8 +344,9 @@ No new concepts are introduced. Everything references what the room
 already knows from L1–L5.
 Structure: here's the question type → here's the trap → here's the
 reasoning path that avoids it → here's what the correct answer looks like.
-[Check:] moments present a real exam/interview scenario and ask the
-room to identify the trap or choose the answer before the teacher reveals it.
+[Pause:] moments present a real exam/interview scenario and give the
+reader time to identify the trap or reason toward the answer before
+the teacher reveals it.
 
 ---
 
@@ -295,24 +355,34 @@ room to identify the trap or choose the answer before the teacher reveals it.
 | cognitive_role | Script emphasis |
 |----------------|-----------------|
 | `definition` | The teacher spends time on plain-English explanation and the analogy. Student questions are about what it is and why it exists. |
-| `contrast` | The comparison moment is the heart of the script. The board gets a side-by-side. Students are asked to identify which concept applies to a scenario. |
-| `model` | The teacher walks through each part of the framework in sequence, showing how the parts relate. The board has a simple diagram. |
+| `contrast` | The comparison moment is the heart of the script. Students are asked to identify which concept applies to a scenario. |
+| `model` | The teacher walks through each part of the framework in sequence, showing how the parts relate. |
 | `application` | The worked scenario carries the most time. Students are asked to reason through a real situation before the teacher gives the answer. |
 
 ---
 
 # DEPTH STAGE — PACING, CEILING, AND LENGTH
 
-| depth_stage | Pacing and ceiling | Approximate length |
+| depth_stage | Pacing and ceiling | Target length |
 |-------------|--------------------|--------------------|
-| D1 | Slowest. Maximum analogy time. Define before any mechanism. No comparison to adjacent services required. | 400–600 words |
-| D2 | Steady. Full definition plus one contrast. The confusion_buster gets its own moment. | 500–700 words |
-| D3 | Balanced. Definition is brief — the room knows what it is. Decision reasoning and scenario application get the most time. | 650–900 words |
-| D4 | Faster on definitions. Design constraints and trade-offs dominate. Scenarios involve multiple services interacting. | 800–1100 words |
-| D5 | Fastest on basics. Scale, organisational complexity, and prescriptive recommendations dominate. Scenarios have multiple valid answers with different trade-offs. | 1000–1500 words |
+| D1 | Slowest. Maximum analogy time. Define before any mechanism. No comparison to adjacent services required. | 600–900 words |
+| D2 | Steady. Full definition plus one contrast. The confusion_buster gets its own moment. | 800–1100 words |
+| D3 | Balanced. Definition is brief — the room knows what it is. Decision reasoning and scenario application get the most time. | 1100–1500 words |
+| D4 | Faster on definitions. Design constraints and trade-offs dominate. Scenarios involve multiple services interacting. | 1500–2000 words |
+| D5 | Fastest on basics. Scale, organisational complexity, and prescriptive recommendations dominate. Scenarios have multiple valid answers with different trade-offs. | 2000–2800 words |
 
-These are guides, not hard limits. A D1 script that needs 700 words
-is fine. A D3 script at 1400 words is too long — tighten it.
+**Target the upper third of the range as your minimum.**
+The lower bound is a floor — do not treat it as a target.
+A D3 script at 1100 words has been cut short. A D3 script at
+1400 words is doing its job. Earn every word — but spend them.
+
+A script is too short when:
+- An include is stated but not grounded in an analogy or scenario
+- A [Pause:] moment exists but the setup is only one sentence
+- The confusion_buster is named but resolved in one line
+- The landing line arrives before the room has had time to absorb it
+
+These are signs to expand, not trim.
 
 ---
 
@@ -320,7 +390,7 @@ is fine. A D3 script at 1400 words is too long — tighten it.
 
 | concept_tier | Pacing |
 |--------------|--------|
-| `foundation` | Slower. More space between ideas. More [Check:] moments. The analogy gets extra time. |
+| `foundation` | Slower. More space between ideas. More [Pause:] moments. The analogy gets extra time. |
 | `core` | Balanced. Full treatment. One or two student interaction moments. |
 | `extension` | Faster. The teacher assumes foundations are solid and moves to the nuance. Less time on definition, more on distinction and decision. |
 
@@ -362,6 +432,12 @@ Name the business scenario and the failure mode before naming
 any service. "You're running a payment processor. Black Friday.
 500k transactions per minute. Your database is the bottleneck."
 
+Do not pivot to the solution immediately after naming the problem.
+Spend at least two sentences letting the consequence land — what
+is actually breaking, what the business is losing, why this specific
+failure mode matters. The reader needs to feel the problem before
+they're ready to understand why the pattern solves it.
+
 ## Decision 2 — Where does the confusion get resolved?
 
 If `links.often_confused_with` is populated — never save it for
@@ -392,7 +468,30 @@ not the hours it waits."
 
 For contrast spines: the landing line is the decision rule.
 For pattern spines: the landing line names the pattern and its purpose.
-For bridge spines: the landing line is the exam/interview insight.
+The landing line must be specific to this pattern — not a generic
+statement about AWS or cloud design. A landing line that could apply
+to any pattern has failed.
+
+FAIL: "Auto Scaling means you pay for what you use when you use it."
+(True of any auto-scaling service. Doesn't name what this specific
+pattern solves or what the operator's role is.)
+
+PASS: "Define the floor, the ceiling, and the signal — Auto Scaling
+handles everything in between, including the failures you didn't plan for."
+(Names the operator's role, the system's role, and the resilience
+property in one sentence. Specific to this pattern.)
+
+**Accuracy rule — AZ failure mechanics:** When teaching what happens
+when an Availability Zone fails, describe the mechanism accurately.
+Auto Scaling does not detect AZ impairment and consciously route
+around it. The actual sequence: failed instances fail their health
+checks, Auto Scaling terminates them and launches replacements, and
+the rebalancing algorithm places new instances in zones with fewer
+running instances — which naturally avoids the impaired zone.
+The mechanism is reactive, not predictive. Scripts that say Auto
+Scaling "detects AZ impairment" describe a capability it does not have.
+
+For bridge spines: the landing line is the key insight that sharpens understanding.
 For mental_model spines: the landing line shows how the parts form a whole.
 
 ---
@@ -402,6 +501,14 @@ For mental_model spines: the landing line shows how the parts form a whole.
 These ingredients must all be present. Their order and weight
 is yours to decide based on the three decisions above.
 
+**An opening that frames the session.**
+The first paragraph tells the room what they are going to understand
+by the end — not as a list of topics, but as a promise. One or two
+sentences that make the reader want to keep going.
+"By the end of this, you'll know exactly when to reach for X and why
+it exists — and you'll have a picture in your head that sticks."
+Not a formal agenda. A reason to pay attention.
+
 **The concept in plain words.**
 The `concept_spine` spoken naturally. Said once clearly early.
 Not read out — spoken as the teacher's own words.
@@ -409,7 +516,9 @@ Not read out — spoken as the teacher's own words.
 **The real world picture.**
 The `real_world_analogy` introduced early, returned to at least
 once more when mechanics need grounding. Never replaced with
-a second analogy.
+a second analogy. The scenario must use one of the approved
+company contexts (see ANALOGY COMPANIES below) — not a generic
+"imagine a company" or an arbitrary business type.
 
 **The content from `boundary.includes`.**
 Every include must be covered somewhere. Spoken as connected
@@ -427,60 +536,73 @@ this concept matter. Grounded in a specific picture.
 **At least one real scenario.**
 From `understanding.real_world_scenarios`. Specific — name the
 company type, name the problem, name what happens.
-Followed by a [Check:].
+Followed by a [Pause:] that gives the reader a beat to reason
+through what they'd do before the teacher continues.
 
 **The confusion resolved.**
 From `confusion_buster` — named early, resolved fully before the end.
-If `links.contrast_with` is populated, the board gets a side-by-side.
+If `links.contrast_with` is populated, the prose states the differences
+clearly and concisely.
 If `links.often_confused_with` is populated — flag briefly early,
 do not fully resolve.
 
-**At least two [Check:] moments.**
-Real questions requiring real thought.
-Not "does that make sense?" — something the student has to answer.
-See CHECK QUALITY RULES below.
+**At least two [Pause:] moments.**
+Each one gives the reader a genuine beat to think — a specific
+scenario or mechanism to reason through before the teaching continues.
+Not "does that make sense?" — something with content and direction.
 
-**At least one [Board:] moment.**
-Only if there's a structure, contrast, or relationship that
-genuinely helps when visible. Not forced.
-
-**Interview framing line (if interviews: true).**
-One line near the end — not a new paragraph, just a natural
-moment — framing how this concept appears in interviews.
-"In an interview, if they ask you to design a system that needs
-to process jobs without losing them, this is what you reach for."
+**A closing summary of key learnings.**
+Two to four sentences before the landing line that pull together
+what the room now knows. Not a list. Not "in summary". A brief
+spoken recap in the teacher's voice — the kind of thing a teacher
+says while slowly capping the marker.
+"So here's where we've landed. You know what X is and why it exists.
+You know the one situation where you'd choose it over Y.
+And you know the catch that trips everyone up."
+This must be genuinely specific to this concept — not generic.
 
 **The landing line.**
 Last. One sentence. Repeatable three months later.
 
 ---
 
-# CHECK QUALITY RULES
+# PAUSE QUALITY RULES
 
-A [Check:] is a question spoken to the room that requires applying
-knowledge, not recalling a definition.
+A [Pause:] is a beat of deliberate reflection — not a quiz, not a
+question to answer out loud. It gives the reader a moment to sit
+with a scenario or mechanism before the teacher continues.
 
-FAIL: "Does that make sense?"
-(No wrong answer. Requires nothing.)
+The pause names something specific to think about. It does not ask
+for a spoken answer. It does not test recall. It creates the
+experience of reasoning through a problem rather than passively
+receiving the answer.
 
-FAIL: "Can anyone tell me what SNS stands for?"
-(Recall, not application.)
+WRONG — vague non-pause:
+"[Pause: Think about what you've just learned.]"
+(Nothing to think about. No direction.)
 
-FAIL: "What are the main use cases for Lambda?"
-(Open-ended. No stake. No right or wrong direction to reason toward.)
+WRONG — quiz disguised as a pause:
+"[Pause: What are the three scaling policy types?]"
+(This is a recall test. The reader either knows it or doesn't.
+No thinking happens.)
 
-PASS: "You've got a system where one event needs to trigger billing,
-a notification email, and an audit log entry — all at the same time.
-SQS or SNS — which one and why?"
-(Specific scenario. Forces the decision rule. Has a correct answer.)
+RIGHT — scenario pause:
+"[Pause: Picture your 3 instances at 95% CPU. New capacity is
+3 minutes away. What's happening to your users right now?]"
+(Specific. The reader can reason through it. The teaching that
+follows will land harder because the reader just felt the problem.)
 
-PASS: "Your RDS instance just went down. You're in a Multi-AZ
-deployment. What happens in the next 60 seconds — walk me through it."
-(Requires knowing the mechanism. Has a specific correct sequence.)
+RIGHT — mechanism pause:
+"[Pause: Two health checks running simultaneously — one at the
+load balancer, one at the EC2 layer. Think about which one would
+catch a crashed application process first, and why.]"
+(Directed. The reader applies what was just taught. The answer
+follows naturally in the next paragraph.)
 
-The [Check:] moment should come after the content needed to answer
-it has been taught — not before. Use it to confirm landing, not
-to introduce.
+**Placement rule:** A [Pause:] must come after the content needed
+to reason through it has been taught — never before. The reader
+must have the building blocks. The pause confirms landing; it does
+not introduce.
 
 ---
 
@@ -493,6 +615,48 @@ to introduce.
 - Content from `boundary.excludes`
 - L1-register explanation in an L4/L5 script ("First, let me
   explain what Lambda is..." in a script about event-driven patterns)
+
+---
+
+# ANALOGY COMPANIES — USE ONLY THESE
+
+All real-world scenarios and analogies must be grounded in one
+of these four companies. Choose the one that fits the concept
+most naturally and stick with it throughout the script.
+
+**Amazon (e-commerce + logistics)**
+Use for: scale, traffic spikes, inventory, ordering pipelines,
+Black Friday load, warehouse fulfilment, delivery routing.
+Best fit: auto scaling, CDN, queuing, caching, databases, cost.
+
+**Netflix (streaming + content delivery)**
+Use for: global content distribution, recommendation engines,
+regional failover, high read traffic, video transcoding pipelines.
+Best fit: CDN, S3, Lambda, read replicas, multi-region, resilience.
+
+**Twitter / X (social feed + real-time events)**
+Use for: fan-out writes, timeline generation, viral traffic spikes,
+event streams, pub/sub, rate limiting.
+Best fit: SNS, SQS, Kinesis, caching, horizontal scaling.
+
+**LinkedIn (professional network + jobs)**
+Use for: profile reads, search indexing, connection graphs,
+notification delivery, B2B data pipelines.
+Best fit: search, graph databases, batch processing, IAM, VPC.
+
+## Rules
+
+- Pick ONE company per script. Do not mix companies.
+- Introduce the company naturally the first time, then use it directly.
+  First use: "Take Netflix, for example — ..." or "Consider Amazon's situation: ..."
+  Subsequent uses: "Netflix's approach...", "Amazon's pipeline...", "Twitter's feed..."
+  Not "Think Netflix" or "imagine a large e-commerce company."
+- The company provides the scenario. The AWS concept solves its problem.
+- If the concept_entry's real_world_analogy already names one of these
+  companies, use that one. If it names something else, map it to the
+  closest match from the four above.
+- Do not invent new companies, use generic business types ("a startup",
+  "an enterprise"), or use companies outside this list.
 
 ---
 
@@ -584,9 +748,6 @@ Not cheerleading. A dry, genuine perspective.
 "AWS called this 'Simple' Storage Service. You'll decide for
 yourself whether that name holds up after you've worked with it."
 
-"There are four answers on the exam. Three of them are SQS.
-Learn to read the question."
-
 "This is one of those services that sounds complicated until
 you realise it does one thing and does it well."
 
@@ -651,7 +812,7 @@ Never say these. They signal that the text was written, not spoken.
 # SCRIPT ANTI-PATTERNS — NEVER DO THESE
 
 **The Lecture Voice.** Long unbroken blocks of speech with no
-[Check:], no [Board:], no paragraph breaks. A real teacher breathes.
+[Pause:], no paragraph breaks. A real teacher breathes.
 Break up long explanations. No paragraph should exceed six sentences.
 
 **The Announcement Opening.**
@@ -664,9 +825,10 @@ Start with a question, a problem, or a scenario.
 third..." Real teaching builds one idea at a time. It does not
 start with the structure.
 
-**The False Check.**
-"Does that make sense?" after a hard concept. Ask something that
-requires a real answer.
+**The Empty Pause.**
+"[Pause: Think about what you've just learned.]" after a hard concept.
+A pause needs a specific scenario or mechanism to sit with —
+not a vague invitation to reflect.
 
 **The Textbook Transition.**
 "Having established the definition of high availability, we will
@@ -706,8 +868,13 @@ If any item fails, revise your plan before generating.
 **Content planned:**
 - [ ] Every boundary.includes item will be covered
 - [ ] No boundary.excludes item will appear
-- [ ] At least two [Check:] moments planned — each requires applying knowledge
-- [ ] Interview framing line planned if interviews: true
+- [ ] For pattern spines: whole-picture paragraph planned — one
+      narrative of end-to-end flow before any service is introduced
+- [ ] At least two [Pause:] moments planned — each gives the reader
+      a specific scenario or mechanism to reason through
+- [ ] Every [Pause:] comes after the content needed to reason through it
+- [ ] Analogy company chosen from approved list (Amazon / Netflix / Twitter / LinkedIn) — not a generic business
+- [ ] Same company used throughout — no switching mid-script
 
 **Voice committed:**
 - [ ] Contractions throughout — no exceptions
@@ -724,8 +891,7 @@ Now write the script.
 
 The script uses only:
 - Plain speech paragraphs — no labels, no markers, no `TEACHER:`
-- `[Board: what is written or drawn]` on its own line
-- `[Check: the exact words spoken to the room]` on its own line
+- `[Pause: one sentence naming what to think about]` on its own line
 - `##` section headings as navigation markers for the teacher
 
 ## File header (mandatory)
@@ -749,15 +915,33 @@ The front matter is followed by a blank line, then the script begins.
 Do not add any other metadata. Do not add a title heading after the
 front matter — the script opens directly with the first spoken line.
 
-Section headings must reflect the actual content of that section —
-not fixed labels. Every script should have different headings.
+Section headings (`##`) are navigation markers for the teacher —
+not topic announcements for the learner. They signal where a new
+teaching block begins, nothing more.
+
+Rules for section headings:
+- Maximum 4 headings per script
+- A heading must never announce what is about to be taught
+- A heading should be evocative, not descriptive — a phrase that
+  creates curiosity or names a moment, not a component or a concept
+- The prose itself must carry all transitions between ideas
+  A heading is never a substitute for a transition sentence
+
+The transition between teaching blocks must always appear in the
+last sentence of one block or the first sentence of the next —
+never delegated to a heading.
+
+WRONG heading: "## The Auto Scaling Group Manages the Fleet"
+RIGHT heading: "## When the Load Hits"
+
+WRONG heading: "## CloudWatch Metrics Drive Scaling Decisions"
+RIGHT heading: "## What the System Is Watching"
 
 Good heading examples:
 - `## The Plane That Keeps Flying`
 - `## Why Two Seconds Is Sometimes Too Long`
 - `## Standby vs Always On`
 - `## The Decision Nobody Wants to Make`
-- `## What the Interviewer Is Really Asking`
 
 Bad heading examples — never use these:
 - `## Opening`
@@ -767,6 +951,7 @@ Bad heading examples — never use these:
 - `## Close`
 - `## Summary`
 - `## [~90 seconds]`
+- Any heading that names a service, component, or AWS concept
 
 No timing estimates anywhere in the output.
 

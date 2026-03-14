@@ -31,6 +31,7 @@ class PathsConfig:
     input_dir: Path
     output_concepts_dir: Path
     output_narrated_dir: Path
+    output_whiteboard_dir: Path
     output_rendered_dir: Path
     output_published_dir: Path
     logs_dir: Path
@@ -96,15 +97,16 @@ def _load() -> Config:
     # Paths
     p = raw.get("paths", {})
     paths = PathsConfig(
-        prompts_dir          = _ROOT / p.get("prompts_dir",           "01_prompts"),
-        input_dir            = _ROOT / p.get("input_dir",             "input"),
-        output_concepts_dir  = _ROOT / p.get("output_concepts_dir",   "output/01_concepts"),
-        output_narrated_dir  = _ROOT / p.get("output_narrated_dir",   "output/02_narrated"),
-        output_rendered_dir  = _ROOT / p.get("output_rendered_dir",   "output/03_rendered"),
-        output_published_dir = _ROOT / p.get("output_published_dir",  "output/04_published"),
-        logs_dir             = _ROOT / p.get("logs_dir",              "logs"),
-        backups_outline_dir  = _ROOT / p.get("backups_outline_dir",   "logs/backups/outline"),
-        backups_expand_dir   = _ROOT / p.get("backups_expand_dir",    "logs/backups/expand"),
+        prompts_dir           = _ROOT / p.get("prompts_dir",            "01_prompts"),
+        input_dir             = _ROOT / p.get("input_dir",              "input"),
+        output_concepts_dir   = _ROOT / p.get("output_concepts_dir",    "output/01_concepts"),
+        output_narrated_dir   = _ROOT / p.get("output_narrated_dir",    "output/02_narrated"),
+        output_whiteboard_dir = _ROOT / p.get("output_whiteboard_dir",  "output/02b_whiteboards"),
+        output_rendered_dir   = _ROOT / p.get("output_rendered_dir",    "output/03_rendered"),
+        output_published_dir  = _ROOT / p.get("output_published_dir",   "output/04_published"),
+        logs_dir              = _ROOT / p.get("logs_dir",               "logs"),
+        backups_outline_dir   = _ROOT / p.get("backups_outline_dir",    "logs/backups/outline"),
+        backups_expand_dir    = _ROOT / p.get("backups_expand_dir",     "logs/backups/expand"),
     )
 
     # PDF
