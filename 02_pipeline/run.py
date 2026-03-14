@@ -50,8 +50,18 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from utils.api import call_claude
-from utils.call_plan import get_part_folder
-from utils.config import config
+from utils.config import (
+    config,
+    syllabus,
+    syllabus_phase_names,
+    syllabus_phase_name_slug,
+    syllabus_milestone_tags,
+    syllabus_milestone_colors,
+    syllabus_analogy_block,
+    syllabus_milestone_depth_block,
+    syllabus_phase_block,
+    syllabus_area_block,
+)
 from utils.usage_log import compute_cost, log_usage
 from pipeline_common import (
     _part_subdir,
@@ -83,10 +93,55 @@ LOG_FILE      = config.paths.logs_dir / "usage_run.tsv"
 # Path helpers, spine loaders, and _select_spines live in pipeline_common.py
 
 def _load_prompt(name: str) -> str:
+    """Load a prompt template and inject syllabus variables."""
     path = config.paths.prompts_dir / f"{name}_prompt.md"
     if not path.exists():
         raise FileNotFoundError(f"Prompt not found: {path}")
-    return path.read_text(encoding="utf-8")
+    text = path.read_text(encoding="utf-8")
+
+    # Inject syllabus variables into any prompt that uses them
+    replacements = {
+        "{{SUBJECT}}":          syllabus.get("subject", ""),
+        "{{SUBJECT_SHORT}}":    syllabus.get("subject_short", ""),
+        "{{PROJECT_NAME}}":     syllabus.get("project_name", ""),
+        "{{SERIES_NAME}}":      syllabus.get("series_name", ""),
+        "{{EXPERT_ROLE}}":      syllabus.get("expert_role", "").strip(),
+        "{{ANALOGY_SOURCES}}":  syllabus_analogy_block(),
+        "{{MILESTONE_DEPTH_MAP}}":   syllabus_milestone_depth_block(),
+        "{{PHASE_DESCRIPTIONS}}": syllabus_phase_block(),
+        "{{AREA_LIST}}":      syllabus_area_block(),
+        "{{TEACHING_NOTES}}":   syllabus.get("teaching_notes", "").strip(),
+        "{{COVERAGE_MAP}}": syllabus.get("coverage_map", "").strip(),
+        "{{ENTITY_FIELD}}":    syllabus.get("concept_schema", {}).get("entity_field", "service"),
+    }
+
+    # Build exam tag CSS block for render/whiteboard prompts
+    exam_colors = syllabus_milestone_colors()
+    tag_css_lines = []
+    for tag, color in exam_colors.items():
+        tag_css_lines.append(f".tag-{tag.lower()} {{ background: {color}; }}")
+    replacements["{{MILESTONE_TAG_CSS}}"] = "\n".join(tag_css_lines)
+
+    # Build exam tag color table for render prompt
+    exam_color_table = []
+    for tag, color in exam_colors.items():
+        exam_color_table.append(f"| {tag}  | {color} |")
+    replacements["{{MILESTONE_COLOR_TABLE}}"] = "\n".join(exam_color_table)
+
+    # Build allowed values blocks
+    spine_fields = syllabus.get("concept_schema", {})
+    replacements["{{ALLOWED_TYPES}}"] = ", ".join(spine_fields.get("allowed_types", []))
+    replacements["{{ALLOWED_TIERS}}"] = ", ".join(spine_fields.get("allowed_tiers", []))
+    replacements["{{ALLOWED_ROLES}}"] = ", ".join(spine_fields.get("allowed_roles", []))
+    replacements["{{ALLOWED_MILESTONES}}"] = ", ".join(syllabus_milestone_tags())
+    replacements["{{ALLOWED_AREAS}}"] = "\n".join(
+        f"  {d['name']}" for d in syllabus.get("areas", [])
+    )
+
+    for placeholder, value in replacements.items():
+        text = text.replace(placeholder, value)
+
+    return text
 
 
 # ---------------------------------------------------------------------------
@@ -268,10 +323,10 @@ def run_narrate(
         "id":         concept.get("id", spine_id),
         "slug":       concept.get("slug", slug),
         "title":      concept.get("title", slug),
-        "layer":      concept.get("layer", ""),
-        "layer_name": concept.get("layer_name", ""),
-        "exams":      concept.get("exams", []),
-        "interviews": concept.get("interviews", False),
+        "phase":      concept.get("phase", ""),
+        "phase_name": concept.get("phase_name", ""),
+        "milestones":      concept.get("milestones", []),
+        "applied": concept.get("applied", False),
     }
     fm_yaml = yaml.dump(fm_fields, allow_unicode=True, sort_keys=False, default_flow_style=False).strip()
 
@@ -437,15 +492,15 @@ def run_whiteboard(
 
     fm, body = _strip_front_matter(narrated_md)
     title    = fm.get("title", slug)
-    layer    = str(fm.get("layer_name", fm.get("layer", "")))
-    exams    = ", ".join(fm.get("exams") or [])
+    phase    = str(fm.get("phase_name", fm.get("phase", "")))
+    milestones = ", ".join(fm.get("milestones") or [])
 
     prompt = _load_prompt("whiteboard")
     filled = (
         prompt
         .replace("{{TITLE}}",  title)
-        .replace("{{LAYER}}",  layer)
-        .replace("{{EXAMS}}",  exams)
+        .replace("{{PHASE}}",  phase)
+        .replace("{{MILESTONES}}",  milestones)
         .replace("{{SCRIPT}}", body)
     )
 
@@ -482,16 +537,16 @@ def run_render(spine_id: int, slug: str, narrated_md: str, dry_run: bool = False
 
     fm, body = _strip_front_matter(narrated_md)
     title    = fm.get("title", slug)
-    layer    = str(fm.get("layer", ""))
-    exams    = ", ".join(fm.get("exams") or [])
+    phase    = str(fm.get("phase", ""))
+    milestones = ", ".join(fm.get("milestones") or [])
 
 
     prompt = _load_prompt("render")
     filled = (
         prompt
         .replace("{{TITLE}}",    title)
-        .replace("{{LAYER}}",    layer)
-        .replace("{{EXAMS}}",    exams)
+        .replace("{{PHASE}}",    phase)
+        .replace("{{MILESTONES}}",    milestones)
         .replace("{{MARKDOWN}}", body)
     )
 
@@ -565,10 +620,7 @@ def run_combine(dry_run: bool = False) -> None:
         print("[error] pypdf not installed: pip install pypdf", file=sys.stderr)
         sys.exit(1)
 
-    layer_names = {
-        1: "foundations", 2: "core_mechanisms", 3: "service_mastery",
-        4: "decision_patterns", 5: "architectural_patterns", 6: "exam_bridges",
-    }
+    phase_names = {k: syllabus_phase_name_slug(k) for k in syllabus_phase_names()}
     ind_dir = config.paths.output_published_dir / config.pdf.individual_subdir
     com_dir = combined_dir()
     com_dir.mkdir(parents=True, exist_ok=True)
@@ -580,7 +632,7 @@ def run_combine(dry_run: bool = False) -> None:
         return
 
     spines_by_id = {s["id"]: s for s in _load_spines()}
-    layer_pdfs: dict[int, list[Path]] = {i: [] for i in range(1, 7)}
+    phase_pdfs: dict[int, list[Path]] = {i: [] for i in phase_names}
 
     for pdf_path in all_pdfs:
         m = re.match(r"^(\d+)_", pdf_path.name)
@@ -588,13 +640,13 @@ def run_combine(dry_run: bool = False) -> None:
             sid   = int(m.group(1))
             spine = spines_by_id.get(sid)
             if spine:
-                layer_pdfs[spine["layer"]].append(pdf_path)
+                phase_pdfs[spine["phase"]].append(pdf_path)
 
     if config.pdf.combined_by_layer:
-        for layer, pdfs in layer_pdfs.items():
+        for layer, pdfs in phase_pdfs.items():
             if not pdfs:
                 continue
-            out = com_dir / f"layer_{layer}_{layer_names[layer]}.pdf"
+            out = com_dir / f"layer_{layer}_{phase_names[layer]}.pdf"
             if dry_run:
                 print(f"  [combine] would write → {out.name}  ({len(pdfs)} PDFs)")
                 continue
@@ -606,7 +658,8 @@ def run_combine(dry_run: bool = False) -> None:
             print(f"  [combine] {out.name}  ({len(pdfs)} PDFs)")
 
     if config.pdf.combined_complete:
-        out = com_dir / "aws_concept_mastery_complete.pdf"
+        combined_name = syllabus.get("combined_pdf_name", "complete.pdf")
+        out = com_dir / combined_name
         if dry_run:
             print(f"  [combine] would write → {out.name}  ({len(all_pdfs)} PDFs total)")
             return

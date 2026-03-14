@@ -22,40 +22,48 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from utils.config import config
+from utils.config import (
+    config,
+    syllabus,
+    syllabus_phase_names,
+    syllabus_milestone_tags,
+    syllabus_allowed_areas,
+)
 
 # ---------------------------------------------------------------------------
-# Allowed field values — must match outline_prompt.md exactly
+# Derive allowed values from syllabus
 # ---------------------------------------------------------------------------
-ALLOWED_SPINE_TYPES     = {"mental_model", "concept", "contrast", "pattern", "bridge"}
-ALLOWED_EXAMS           = {"CCP", "SAA", "SAP"}
-ALLOWED_DOMAINS         = {
-    "Cloud Concepts",
-    "Security and Compliance",
-    "Cloud Technology and Services",
-    "Billing, Pricing, and Support",
-    "Cross-Domain",
+_spine_fields      = syllabus.get("concept_schema", {})
+ALLOWED_SPINE_TYPES     = set(_spine_fields.get("allowed_types", []))
+ALLOWED_CONCEPT_TIERS   = set(_spine_fields.get("allowed_tiers", []))
+ALLOWED_COGNITIVE_ROLES = set(_spine_fields.get("allowed_roles", []))
+ALLOWED_MILESTONES           = set(syllabus_milestone_tags())
+ALLOWED_AREAS         = syllabus_allowed_areas()
+
+PHASE_NAMES = syllabus_phase_names()
+PHASE_TARGETS = {
+    int(k): v.get("target_count", 0)
+    for k, v in syllabus.get("phases", {}).items()
 }
-ALLOWED_CONCEPT_TIERS   = {"foundation", "core", "extension"}
-ALLOWED_COGNITIVE_ROLES = {"definition", "contrast", "model", "application"}
+
+# Build layer-type rules from syllabus
+_PHASE_REQUIRED_TYPES: dict[int, set[str]] = {}
+_PHASE_ALLOWED_TYPES: dict[int, set[str]] = {}
+for _lnum, _linfo in syllabus.get("phases", {}).items():
+    _lnum = int(_lnum)
+    if "required_types" in _linfo:
+        _PHASE_REQUIRED_TYPES[_lnum] = set(_linfo["required_types"])
+    elif "allowed_types" in _linfo:
+        _PHASE_ALLOWED_TYPES[_lnum] = set(_linfo["allowed_types"])
+
+SERVICE_FIELD = _spine_fields.get("entity_field", "service")
 
 REQUIRED_FIELDS = [
-    "id", "slug", "title", "layer", "layer_name",
-    "spine_type", "exams", "interviews", "domain",
-    "aws_service", "concept_tier", "cognitive_role",
-    "concept_spine", "notes",
+    "id", "slug", "title", "phase", "phase_name",
+    "concept_type", "milestones", "applied", "area",
+    SERVICE_FIELD, "concept_tier", "cognitive_role",
+    "core_idea", "notes",
 ]
-
-LAYER_NAMES = {
-    1: "Foundations",
-    2: "Core Mechanisms",
-    3: "Service Mastery",
-    4: "Decision Patterns",
-    5: "Architectural Patterns",
-    6: "Exam and Interview Bridges",
-}
-
-LAYER_SPINE_TARGETS = {1: 50, 2: 100, 3: 350, 4: 250, 5: 180, 6: 70}
 
 
 # ---------------------------------------------------------------------------
@@ -74,18 +82,18 @@ def validate_spine(spine: dict, index: int) -> list[str]:
             problems.append(f"{prefix}: missing field '{field_name}'")
 
     # Field value checks
-    if spine.get("spine_type") not in ALLOWED_SPINE_TYPES:
-        problems.append(f"{prefix}: invalid spine_type '{spine.get('spine_type')}'")
+    if spine.get("concept_type") not in ALLOWED_SPINE_TYPES:
+        problems.append(f"{prefix}: invalid concept_type '{spine.get('concept_type')}'")
 
-    if not isinstance(spine.get("exams"), list) or not spine.get("exams"):
-        problems.append(f"{prefix}: 'exams' must be a non-empty list")
+    if not isinstance(spine.get("milestones"), list) or not spine.get("milestones"):
+        problems.append(f"{prefix}: 'milestones' must be a non-empty list")
     else:
-        bad_exams = [e for e in spine["exams"] if e not in ALLOWED_EXAMS]
-        if bad_exams:
-            problems.append(f"{prefix}: unknown exams {bad_exams}")
+        bad = [e for e in spine["milestones"] if e not in ALLOWED_MILESTONES]
+        if bad:
+            problems.append(f"{prefix}: unknown milestones {bad}")
 
-    if spine.get("domain") not in ALLOWED_DOMAINS:
-        problems.append(f"{prefix}: invalid domain '{spine.get('domain')}'")
+    if spine.get("area") not in ALLOWED_AREAS:
+        problems.append(f"{prefix}: invalid area '{spine.get('area')}'")
 
     if spine.get("concept_tier") not in ALLOWED_CONCEPT_TIERS:
         problems.append(f"{prefix}: invalid concept_tier '{spine.get('concept_tier')}'")
@@ -93,26 +101,31 @@ def validate_spine(spine: dict, index: int) -> list[str]:
     if spine.get("cognitive_role") not in ALLOWED_COGNITIVE_ROLES:
         problems.append(f"{prefix}: invalid cognitive_role '{spine.get('cognitive_role')}'")
 
-    if not isinstance(spine.get("interviews"), bool):
-        problems.append(f"{prefix}: 'interviews' must be true or false")
+    if not isinstance(spine.get("applied"), bool):
+        problems.append(f"{prefix}: 'applied' must be true or false")
 
-    layer = spine.get("layer")
-    if layer not in range(1, 7):
-        problems.append(f"{prefix}: 'layer' must be 1–6, got {layer!r}")
+    phase = spine.get("phase")
+    valid_phases = set(PHASE_NAMES.keys())
+    if phase not in valid_phases:
+        problems.append(f"{prefix}: 'phase' must be one of {sorted(valid_phases)}, got {phase!r}")
 
-    # Layer-type integrity rules from outline_prompt.md
-    spine_type = spine.get("spine_type")
-    if layer == 6 and spine_type != "bridge":
-        problems.append(f"{prefix}: L6 spine must be spine_type=bridge, got '{spine_type}'")
-    if layer == 5 and spine_type not in ("pattern", "mental_model"):
-        problems.append(f"{prefix}: L5 spine should be pattern or mental_model, got '{spine_type}'")
-    if layer == 4 and spine_type not in ("contrast", "mental_model"):
-        problems.append(f"{prefix}: L4 spine should be contrast or mental_model, got '{spine_type}'")
+    # Phase-type integrity rules from syllabus
+    ctype = spine.get("concept_type")
+    if phase in _PHASE_REQUIRED_TYPES:
+        if ctype not in _PHASE_REQUIRED_TYPES[phase]:
+            problems.append(
+                f"{prefix}: P{phase} concept must be concept_type={_PHASE_REQUIRED_TYPES[phase]}, got '{ctype}'"
+            )
+    elif phase in _PHASE_ALLOWED_TYPES:
+        if ctype not in _PHASE_ALLOWED_TYPES[phase]:
+            problems.append(
+                f"{prefix}: P{phase} concept should be {_PHASE_ALLOWED_TYPES[phase]}, got '{ctype}'"
+            )
 
-    # Concept spine must not be empty and should not contain " and " (two ideas)
-    cs = spine.get("concept_spine", "")
+    # Core idea must not be empty and should not be too short
+    cs = spine.get("core_idea", "")
     if not cs or len(str(cs).strip()) < 20:
-        problems.append(f"{prefix}: concept_spine is missing or too short")
+        problems.append(f"{prefix}: core_idea is missing or too short")
 
     # approved field should not be set by Claude (warn only if value is not false)
     if "approved" in spine and spine["approved"] is not False:
@@ -133,10 +146,10 @@ def coverage_summary(spines: list[dict]) -> dict:
     approved_false = 0
 
     for spine in spines:
-        layer = spine.get("layer")
+        layer = spine.get("phase")
         if isinstance(layer, int):
             layer_counts[layer] += 1
-        for exam in (spine.get("exams") or []):
+        for exam in (spine.get("milestones") or []):
             exam_counts[exam] += 1
         tier = spine.get("concept_tier")
         if tier:
@@ -194,15 +207,16 @@ def _bar(count: int, target: int, width: int = 20) -> str:
     return f"[{bar}] {count:>4}/{target}  ({pct:.0f}%)"
 
 
-def print_report(spines: list[dict], layer_filter: int | None, problems_only: bool) -> None:
+def print_report(spines: list[dict], phase_filter: int | None, problems_only: bool) -> None:
+    project_name = syllabus.get("project_name", "Concept Mastery")
     print(f"\n{SEP}")
-    print("  run_curate.py — Spine Curation Report")
+    print(f"  {project_name} — Spine Curation Report")
     print(SEP)
 
     # ── filter ───────────────────────────────────────────────────────────────
-    if layer_filter is not None:
-        spines = [s for s in spines if s.get("layer") == layer_filter]
-        print(f"  Filtered to layer {layer_filter} — {len(spines)} spines\n")
+    if phase_filter is not None:
+        spines = [s for s in spines if s.get("phase") == phase_filter]
+        print(f"  Filtered to layer {phase_filter} — {len(spines)} spines\n")
 
     # ── validation ───────────────────────────────────────────────────────────
     all_problems: list[str] = []
@@ -238,36 +252,36 @@ def print_report(spines: list[dict], layer_filter: int | None, problems_only: bo
         print(f"  Held back (approved: false): {cov['approved_false']}")
     print()
 
-    print("  Layer coverage:")
-    for layer in range(1, 7):
-        name   = LAYER_NAMES[layer]
-        target = LAYER_SPINE_TARGETS[layer]
+    print("  Phase coverage:")
+    for layer in sorted(PHASE_NAMES.keys()):
+        name   = PHASE_NAMES[layer]
+        target = PHASE_TARGETS.get(layer, 0)
         count  = cov["layer_counts"].get(layer, 0)
         bar    = _bar(count, target)
         print(f"    L{layer} {name:<30} {bar}")
     print()
 
-    print("  Exam coverage (spines tagged):")
-    for exam in ["CCP", "SAA", "SAP"]:
+    print("  Milestone coverage (spines tagged):")
+    for exam in sorted(ALLOWED_MILESTONES):
         count = cov["exam_counts"].get(exam, 0)
         print(f"    {exam}: {count}")
     print()
 
     print("  Concept tier distribution:")
-    for tier in ["foundation", "core", "extension"]:
+    for tier in sorted(ALLOWED_CONCEPT_TIERS):
         count = cov["tier_counts"].get(tier, 0)
         pct   = count / cov["total"] * 100 if cov["total"] else 0
         print(f"    {tier:<12} {count:>4}  ({pct:.0f}%)")
     print()
 
     # ── per-layer detail ─────────────────────────────────────────────────────
-    if layer_filter is None:
+    if phase_filter is None:
         print("  Spine types per layer:")
-        for layer in range(1, 7):
-            layer_spines = [s for s in spines if s.get("layer") == layer]
+        for layer in sorted(PHASE_NAMES.keys()):
+            layer_spines = [s for s in spines if s.get("phase") == layer]
             type_counts: dict[str, int] = defaultdict(int)
             for s in layer_spines:
-                type_counts[s.get("spine_type", "?")] += 1
+                type_counts[s.get("concept_type", "?")] += 1
             if type_counts:
                 breakdown = "  ".join(f"{t}={n}" for t, n in sorted(type_counts.items()))
                 print(f"    L{layer}: {breakdown}")
@@ -294,7 +308,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--layer", type=int, metavar="N",
-        help="Show report for a single layer only (1–6)"
+        help="Show report for a single layer only"
     )
     parser.add_argument(
         "--fix", action="store_true",
@@ -313,7 +327,7 @@ def main() -> None:
         print(f"[error] concept_spines.yaml must be a YAML list, got {type(raw).__name__}", file=sys.stderr)
         sys.exit(1)
 
-    print_report(raw, layer_filter=args.layer, problems_only=args.fix)
+    print_report(raw, phase_filter=args.layer, problems_only=args.fix)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,497 @@
+# ============================================================================
+# SYLLABUS — the single input file that drives the entire pipeline.
+#
+# To create a course on a different subject, copy this file and change
+# every value.  The pipeline scripts, prompts, and dashboard are generic —
+# they read everything they need from this file.
+#
+# ── SCHEMA RATIONALE ────────────────────────────────────────────────────────
+#
+# This schema is designed to describe ANY mastery journey — not just
+# certification prep.  The naming follows these principles:
+#
+#   phases      Not "layers" — every mastery journey progresses through
+#               phases (Basics → Mechanics → Mastery → Application).
+#               "Phase" avoids implying rigid stacking.
+#
+#   areas       Not "domains" — topic areas within the subject.
+#               "Area" is neutral and universal.  A piano curriculum has
+#               areas (Theory, Ear Training), not "domains."
+#
+#   milestones  Not "exams" — proficiency checkpoints you reach.
+#               Could be certifications (CKA), skill levels (Grade 5),
+#               or personal targets (Confident Home Cook).
+#
+#   applied     Not "interviews" — flags whether a concept has
+#               real-world practical use beyond theory.
+#
+#   concept_type  Not "spine_type" — pedagogical shape of each concept.
+#                 Drops pipeline jargon.
+#
+#   core_idea   Not "concept_spine" — the one-sentence essence of
+#               a concept.  What it actually is.
+#
+#   entity_field  Not "service_field" — the domain-specific "thing."
+#                 In AWS it's a service.  In cooking it's a technique.
+#                 In music it's a skill.
+#
+# ── HIERARCHY ───────────────────────────────────────────────────────────────
+#
+# The three structural sections form a learning matrix:
+#
+#   MILESTONES  define WHAT you're working toward.
+#       └── each milestone spans certain PHASES (via the `phases` field).
+#
+#   PHASES      define the ORDER you learn things.
+#       └── each phase covers certain AREAS (via the outline_plan).
+#
+#   AREAS       define the GROUPING of related concepts.
+#       └── each concept sits in one phase + one area + serves N milestones.
+#
+# The outline_plan is the intersection: each entry is
+#   "Phase X, Area Y, N concepts" — the generation plan.
+#
+# ============================================================================
+
+# ── Identity ────────────────────────────────────────────────────────────────
+project_name: "AWS Concept Mastery"
+series_name: "Joy of Learning"
+combined_pdf_name: "aws_concept_mastery_complete.pdf"
+
+subject: "Amazon Web Services (AWS)"
+subject_short: "AWS"
+
+expert_role: >
+  You are a senior AWS Solutions Architect with 12 years of hands-on
+  experience and a gift for teaching.  You understand not just what each
+  service does, but why it exists, what problem it was built to solve,
+  and how it relates to everything around it.
+
+# ── Milestones ──────────────────────────────────────────────────────────────
+# Proficiency checkpoints on the mastery journey.
+# Keys are the tag values that appear in each concept's `milestones` list.
+# `phases` links each milestone to the phases it spans — this is the
+# explicit connection between milestones and the learning progression.
+milestones:
+  CCP:
+    full_name: "Cloud Practitioner (CLF-C02)"
+    depth: "D1-D2"
+    phases: [1, 2, 3]
+    badge_color: "#27AE60"
+  SAA:
+    full_name: "Solutions Architect Associate (SAA-C03)"
+    depth: "D3-D4"
+    phases: [2, 3, 4, 5]
+    badge_color: "#1A6FA8"
+  SAP:
+    full_name: "Solutions Architect Professional (SAP-C02)"
+    depth: "D4-D5"
+    phases: [3, 4, 5, 6]
+    badge_color: "#7D3C98"
+
+# ── Phases ──────────────────────────────────────────────────────────────────
+# The learning progression.  Each phase has a cognitive purpose —
+# you master one phase before the next builds on it.
+# `allowed_types` / `required_types` restrict which concept_types
+# may appear in each phase.
+phases:
+  1:
+    name: "Foundations"
+    description: >
+      The 8 big ideas that everything else hangs on.
+      Why cloud exists.  AWS design philosophy.
+      The mental models a learner needs before anything else.
+    target_count: 50
+    allowed_types: [mental_model, concept]
+    color_bg: "#e8f5e9"
+    color_text: "#2e7d32"
+    color_accent: "#a5d6a7"
+  2:
+    name: "Core Mechanisms"
+    description: >
+      How AWS actually works conceptually — not implementation details
+      but the conceptual mechanisms.  IAM evaluation logic. VPC routing
+      model.  S3 consistency.
+    target_count: 100
+    allowed_types: [mental_model, concept]
+    color_bg: "#e3f2fd"
+    color_text: "#1565c0"
+    color_accent: "#90caf9"
+  3:
+    name: "Service Mastery"
+    description: >
+      Every significant in-scope service.  What it is.  Why it exists.
+      What problem it solves.  Where its boundaries are.
+    target_count: 350
+    allowed_types: [mental_model, concept, contrast]
+    color_bg: "#fff8e1"
+    color_text: "#f57f17"
+    color_accent: "#ffe082"
+  4:
+    name: "Decision Patterns"
+    description: >
+      When to use X vs Y.  Every high-stakes choice point.
+      Organised by decision type: resilience, cost, security, data,
+      integration decisions.
+    target_count: 250
+    allowed_types: [contrast, mental_model]
+    color_bg: "#fce4ec"
+    color_text: "#880e4f"
+    color_accent: "#f48fb1"
+  5:
+    name: "Architectural Patterns"
+    description: >
+      How services compose into real systems.  Three-tier web app.
+      Event-driven pipeline.  Serverless.  Hybrid network.
+    target_count: 180
+    allowed_types: [pattern, mental_model]
+    color_bg: "#ede7f6"
+    color_text: "#4527a0"
+    color_accent: "#b39ddb"
+  6:
+    name: "Exam and Interview Bridges"
+    description: >
+      Thin layer mapping mastery to performance.  NOT new concepts.
+      Maps phase 1–5 understanding to exam questions and interviews.
+    target_count: 70
+    required_types: [bridge]
+    color_bg: "#e0f7fa"
+    color_text: "#006064"
+    color_accent: "#80deea"
+
+# ── Areas ───────────────────────────────────────────────────────────────────
+# Topic areas within the subject.  Concepts are grouped by area.
+# The outline_plan maps areas to phases — that is where areas and
+# phases intersect.
+areas:
+  - name: "Cloud Concepts"
+    description: "Fundamental cloud computing principles"
+  - name: "Security and Compliance"
+    description: "IAM, encryption, compliance frameworks"
+  - name: "Cloud Technology and Services"
+    description: "Compute, storage, database, networking, and application services"
+  - name: "Billing, Pricing, and Support"
+    description: "Cost models, billing tools, support plans"
+  - name: "Cross-Domain"
+    description: "Concepts that span multiple areas (phases 4/5/6)"
+
+# ── Concept Schema ──────────────────────────────────────────────────────────
+# Rules for the fields that appear on each concept.
+# `entity_field` names the domain-specific "thing" — in AWS it is a
+# service, in cooking a technique, in music a skill.
+concept_schema:
+  entity_field: "aws_service"
+  allowed_types: [mental_model, concept, contrast, pattern, bridge]
+  allowed_tiers: [foundation, core, extension]
+  allowed_roles: [definition, contrast, model, application]
+
+# ── Teaching Style ──────────────────────────────────────────────────────────
+analogy_sources:
+  - name: "Amazon"
+    context: "e-commerce + logistics"
+    use_for: "scale, traffic spikes, inventory, ordering pipelines, Black Friday load, warehouse fulfilment, delivery routing"
+  - name: "Netflix"
+    context: "streaming + content delivery"
+    use_for: "global content distribution, recommendation engines, regional failover, high read traffic, video transcoding pipelines"
+  - name: "Twitter / X"
+    context: "social feed + real-time events"
+    use_for: "fan-out writes, timeline generation, viral traffic spikes, event streams, pub/sub, rate limiting"
+  - name: "LinkedIn"
+    context: "professional network + jobs"
+    use_for: "profile reads, search indexing, connection graphs, notification delivery, B2B data pipelines"
+
+teaching_notes: |
+  - Open with a session frame, close with a 2-4 sentence summary, then a landing line.
+  - [Pause: ...] markers are intentional — never remove them.
+  - No banned phrases: "Let's explore", "In summary", "Key insight".
+  - Depth stages control length: D1 = 600-900w, D3 = ~1400w, D5 = 2000-2800w.
+  - Analogies use ONLY the sources listed above.
+  - Introduce naturally: "Take Netflix, for example —" not "Think Netflix".
+  - Pick ONE company per script. Do not mix companies.
+
+# ── Coverage Map ────────────────────────────────────────────────────────────
+# Free-form text injected into the outline prompt so Claude can verify
+# every milestone task is covered.  Replace entirely for a different subject.
+coverage_map: |
+  ## CCP (CLF-C02)
+
+  Task 1.1 — Benefits of AWS Cloud
+  Task 1.2 — Well-Architected Framework (6 pillars + WAT)
+  Task 1.3 — Migration strategies (6Rs, CAF)
+  Task 2.1 — Shared responsibility model
+  Task 2.2 — Security, governance, compliance
+            (Config, GuardDuty, KMS, Shield, WAF, Macie, Inspector, Artifact)
+  Task 2.3 — Access management (IAM, MFA, SSO, Organizations, Cognito)
+  Task 2.4 — Security support (Trusted Advisor, support plans, Marketplace)
+  Task 3.1 — Deployment methods (Console, CLI, IaC, deployment models)
+  Task 3.2 — Global infrastructure (Regions, AZs, Edge, Local Zones, Outposts)
+  Task 3.3 — Compute (EC2, Lambda, ECS, EKS, Fargate, Beanstalk, Lightsail)
+  Task 3.4 — Databases (RDS, Aurora, DynamoDB, ElastiCache, Redshift, DMS)
+  Task 3.5 — Networking (VPC, Route53, CloudFront, PrivateLink, Global Accelerator)
+  Task 3.6 — Storage (S3, EBS, EFS, Glacier, Storage Gateway, Snow Family, Backup)
+  Task 3.7 — AI/ML and Analytics (SageMaker, Rekognition, Athena, Kinesis, Glue, QuickSight)
+  Task 3.8 — Other services (SNS, SQS, EventBridge, Connect, WorkSpaces, IoT Core)
+  Task 4.1 — Pricing models (On-Demand, Reserved, Savings Plans, Spot, Free Tier)
+  Task 4.2 — Billing and cost management (Cost Explorer, Budgets, CUR, Tags, Consolidated Billing)
+  Task 4.3 — Support plans (Basic, Developer, Business, Enterprise, TAM, Trusted Advisor)
+
+  ## SAA (SAA-C03)
+
+  Task 1 — Design secure architectures
+    1.1 Secure access to AWS resources
+    1.2 Secure workloads and applications
+    1.3 Determine appropriate data security controls
+
+  Task 2 — Design resilient architectures
+    2.1 Design scalable and loosely coupled architectures
+    2.2 Design highly available and fault-tolerant architectures
+
+  Task 3 — Design high-performing architectures
+    3.1 High-performing and scalable storage solutions
+    3.2 High-performing and elastic compute solutions
+    3.3 High-performing database solutions
+    3.4 High-performing and scalable network architectures
+    3.5 High-performing data ingestion and transformation solutions
+
+  Task 4 — Design cost-optimised architectures
+    4.1 Cost-optimised storage solutions
+    4.2 Cost-optimised compute solutions
+    4.3 Cost-optimised database solutions
+    4.4 Cost-optimised network architectures
+
+  ## SAP (SAP-C02)
+
+  Task 1 — Design solutions for organisational complexity
+    1.1 Architect network connectivity strategies
+    1.2 Prescribe security controls
+    1.3 Design reliable and resilient architectures
+    1.4 Design a multi-account AWS environment
+    1.5 Determine cost optimisation and visibility strategies
+
+  Task 2 — Design for new solutions
+    2.1 Determine deployment strategy for new workloads
+    2.2 Design a solution to ensure business continuity
+    2.3 Determine security controls for new workloads
+    2.4 Design a strategy to migrate existing workloads
+
+  Task 3 — Continuous improvement for existing solutions
+    3.1 Strategy to improve operational excellence
+    3.2 Strategy to improve security
+    3.3 Strategy to improve performance
+    3.4 Strategy to improve reliability
+    3.5 Identify cost optimisation opportunities
+
+  Task 4 — Accelerate workload migration and modernisation
+    4.1 Select existing workloads for potential migration
+    4.2 Determine migration approach and tools
+    4.3 Determine optimisation strategies for workloads
+
+# ── Outline Plan ────────────────────────────────────────────────────────────
+# Each entry drives one API call in run_outline.py.
+# This is where PHASES and AREAS intersect — each entry is
+# "Phase X Part Y" covering a specific area.
+outline_plan:
+  - call_name: "Phase 1 Part 1: The 8 Big Ideas of Cloud and AWS"
+    area: "Cloud Concepts"
+    start_id: 1
+    target_count: 20
+  - call_name: "Phase 1 Part 2: AWS Design Philosophy and Global Infrastructure"
+    area: "Cloud Concepts"
+    start_id: 21
+    target_count: 20
+  - call_name: "Phase 1 Part 3: Shared Responsibility and the Cost Model"
+    area: "Cloud Concepts"
+    start_id: 41
+    target_count: 10
+  - call_name: "Phase 2 Part 1: IAM and Security Mechanisms"
+    area: "Security and Compliance"
+    start_id: 51
+    target_count: 20
+  - call_name: "Phase 2 Part 2: Networking and VPC Mechanisms"
+    area: "Cloud Technology and Services"
+    start_id: 71
+    target_count: 20
+  - call_name: "Phase 2 Part 3: Compute and Serverless Mechanisms"
+    area: "Cloud Technology and Services"
+    start_id: 91
+    target_count: 20
+  - call_name: "Phase 2 Part 4: Storage and Database Mechanisms"
+    area: "Cloud Technology and Services"
+    start_id: 111
+    target_count: 20
+  - call_name: "Phase 2 Part 5: Integration, Messaging and Delivery Mechanisms"
+    area: "Cloud Technology and Services"
+    start_id: 131
+    target_count: 20
+  - call_name: "Phase 3 Part 1: EC2 — Elastic Compute Cloud"
+    area: "Cloud Technology and Services"
+    start_id: 151
+    target_count: 20
+  - call_name: "Phase 3 Part 2: Containers and Serverless Compute"
+    area: "Cloud Technology and Services"
+    start_id: 171
+    target_count: 20
+  - call_name: "Phase 3 Part 3: S3 — Simple Storage Service"
+    area: "Cloud Technology and Services"
+    start_id: 191
+    target_count: 20
+  - call_name: "Phase 3 Part 4: Block, File and Archival Storage"
+    area: "Cloud Technology and Services"
+    start_id: 211
+    target_count: 20
+  - call_name: "Phase 3 Part 5: RDS and Relational Databases"
+    area: "Cloud Technology and Services"
+    start_id: 231
+    target_count: 20
+  - call_name: "Phase 3 Part 6: DynamoDB and NoSQL Databases"
+    area: "Cloud Technology and Services"
+    start_id: 251
+    target_count: 20
+  - call_name: "Phase 3 Part 7: Speciality Databases and Data Migration"
+    area: "Cloud Technology and Services"
+    start_id: 271
+    target_count: 20
+  - call_name: "Phase 3 Part 8: VPC and Core Networking"
+    area: "Cloud Technology and Services"
+    start_id: 291
+    target_count: 20
+  - call_name: "Phase 3 Part 9: Content Delivery and DNS"
+    area: "Cloud Technology and Services"
+    start_id: 311
+    target_count: 20
+  - call_name: "Phase 3 Part 10: IAM, KMS and Core Security Services"
+    area: "Security and Compliance"
+    start_id: 331
+    target_count: 20
+  - call_name: "Phase 3 Part 11: Threat Detection, Compliance and Audit Services"
+    area: "Security and Compliance"
+    start_id: 351
+    target_count: 20
+  - call_name: "Phase 3 Part 12: SQS, SNS, EventBridge and Messaging"
+    area: "Cloud Technology and Services"
+    start_id: 371
+    target_count: 20
+  - call_name: "Phase 3 Part 13: API Gateway, Step Functions and Workflow"
+    area: "Cloud Technology and Services"
+    start_id: 391
+    target_count: 20
+  - call_name: "Phase 3 Part 14: Analytics — Kinesis, Athena, EMR, Glue"
+    area: "Cloud Technology and Services"
+    start_id: 411
+    target_count: 20
+  - call_name: "Phase 3 Part 15: BI, ML and AI Services"
+    area: "Cloud Technology and Services"
+    start_id: 431
+    target_count: 20
+  - call_name: "Phase 3 Part 16: Developer Tools and CI/CD"
+    area: "Cloud Technology and Services"
+    start_id: 451
+    target_count: 20
+  - call_name: "Phase 3 Part 17: Management, Monitoring and Governance Services"
+    area: "Cloud Technology and Services"
+    start_id: 471
+    target_count: 20
+  - call_name: "Phase 3 Part 18: Billing, Cost and Support Services"
+    area: "Billing, Pricing, and Support"
+    start_id: 491
+    target_count: 10
+  - call_name: "Phase 4 Part 1: Resilience and High Availability Decisions"
+    area: "Cross-Domain"
+    start_id: 501
+    target_count: 20
+  - call_name: "Phase 4 Part 2: Fault Tolerance and Disaster Recovery Decisions"
+    area: "Cross-Domain"
+    start_id: 521
+    target_count: 20
+  - call_name: "Phase 4 Part 3: Scalability and Performance Decisions"
+    area: "Cross-Domain"
+    start_id: 541
+    target_count: 20
+  - call_name: "Phase 4 Part 4: Compute Selection Decisions"
+    area: "Cross-Domain"
+    start_id: 561
+    target_count: 20
+  - call_name: "Phase 4 Part 5: Storage Selection Decisions"
+    area: "Cross-Domain"
+    start_id: 581
+    target_count: 20
+  - call_name: "Phase 4 Part 6: Database Selection Decisions"
+    area: "Cross-Domain"
+    start_id: 601
+    target_count: 20
+  - call_name: "Phase 4 Part 7: Networking and Connectivity Decisions"
+    area: "Cross-Domain"
+    start_id: 621
+    target_count: 20
+  - call_name: "Phase 4 Part 8: Security Architecture Decisions"
+    area: "Cross-Domain"
+    start_id: 641
+    target_count: 20
+  - call_name: "Phase 4 Part 9: Integration and Messaging Decisions"
+    area: "Cross-Domain"
+    start_id: 661
+    target_count: 20
+  - call_name: "Phase 4 Part 10: Cost Optimisation Decisions"
+    area: "Cross-Domain"
+    start_id: 681
+    target_count: 20
+  - call_name: "Phase 4 Part 11: Serverless vs Container vs EC2 Decisions"
+    area: "Cross-Domain"
+    start_id: 701
+    target_count: 20
+  - call_name: "Phase 4 Part 12: Data and Analytics Decisions"
+    area: "Cross-Domain"
+    start_id: 721
+    target_count: 20
+  - call_name: "Phase 4 Part 13: Migration Strategy Decisions"
+    area: "Cross-Domain"
+    start_id: 741
+    target_count: 10
+  - call_name: "Phase 5 Part 1: Web Application Patterns"
+    area: "Cross-Domain"
+    start_id: 751
+    target_count: 20
+  - call_name: "Phase 5 Part 2: Serverless and Event-Driven Patterns"
+    area: "Cross-Domain"
+    start_id: 771
+    target_count: 20
+  - call_name: "Phase 5 Part 3: Data Lake and Analytics Patterns"
+    area: "Cross-Domain"
+    start_id: 791
+    target_count: 20
+  - call_name: "Phase 5 Part 4: Microservices and Decoupling Patterns"
+    area: "Cross-Domain"
+    start_id: 811
+    target_count: 20
+  - call_name: "Phase 5 Part 5: Disaster Recovery and Business Continuity Patterns"
+    area: "Cross-Domain"
+    start_id: 831
+    target_count: 20
+  - call_name: "Phase 5 Part 6: Hybrid and On-Premises Integration Patterns"
+    area: "Cross-Domain"
+    start_id: 851
+    target_count: 20
+  - call_name: "Phase 5 Part 7: Multi-Account and Governance Patterns"
+    area: "Cross-Domain"
+    start_id: 871
+    target_count: 20
+  - call_name: "Phase 5 Part 8: Migration and Modernisation Patterns"
+    area: "Cross-Domain"
+    start_id: 891
+    target_count: 20
+  - call_name: "Phase 5 Part 9: Cost Optimisation at Scale Patterns"
+    area: "Cross-Domain"
+    start_id: 911
+    target_count: 20
+  - call_name: "Phase 6 Part 1: CCP Exam Bridges and Common Traps"
+    area: "Cross-Domain"
+    start_id: 931
+    target_count: 20
+  - call_name: "Phase 6 Part 2: SAA Exam Bridges and Scenario Frameworks"
+    area: "Cross-Domain"
+    start_id: 951
+    target_count: 20
+  - call_name: "Phase 6 Part 3: SAP and Interview Bridges"
+    area: "Cross-Domain"
+    start_id: 971
+    target_count: 30

@@ -1,16 +1,20 @@
 """
 utils/config.py
-Loads config.yaml and .env, exposes all settings as a Config dataclass.
+Loads config.yaml, .env, and input/syllabus.yaml.
+Exposes all settings as a Config dataclass.
 
 Usage:
-    from utils.config import config
+    from utils.config import config, syllabus
     print(config.model)
     print(config.paths.prompts_dir)
+    print(syllabus["project_name"])
 """
 
 from __future__ import annotations
 
 import os
+import re
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -124,7 +128,7 @@ def _load() -> Config:
         offline_fonts        = pr.get("offline_fonts",       False),
         weasyprint_log_level = pr.get("weasyprint_log_level","ERROR"),
         combined_by_layer    = pr.get("combined_by_layer",   True),
-        combined_complete    = pr.get("combined_complete",   True),
+        combined_complete    = pr.get("combined_complete",    True),
     )
 
     # API key: environment variable wins over .env file
@@ -150,5 +154,112 @@ def _load() -> Config:
     )
 
 
-# Singleton — all scripts import this directly
+# ---------------------------------------------------------------------------
+# Syllabus loader
+# ---------------------------------------------------------------------------
+
+def _load_syllabus() -> dict:
+    """
+    Load input/syllabus.yaml — the single subject-specific input file.
+    Returns the parsed dict.  Cached at module level as `syllabus`.
+    """
+    syllabus_path = _ROOT / "input" / "syllabus.yaml"
+    if not syllabus_path.exists():
+        print(
+            f"[error] input/syllabus.yaml not found at {syllabus_path}\n"
+            "  Create a syllabus.yaml to define your course.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    raw = yaml.safe_load(syllabus_path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        print("[error] syllabus.yaml must be a YAML mapping.", file=sys.stderr)
+        sys.exit(1)
+    return raw
+
+
+# ---------------------------------------------------------------------------
+# Syllabus convenience helpers
+# ---------------------------------------------------------------------------
+
+def syllabus_phase_names() -> dict[int, str]:
+    """Return {1: 'Foundations', 2: 'Core Mechanisms', ...} from syllabus."""
+    phases = syllabus.get("phases", {})
+    return {int(k): v["name"] for k, v in phases.items()}
+
+
+def syllabus_phase_name_slug(phase: int) -> str:
+    """Return e.g. 'foundations' or 'core_mechanisms' for a phase number."""
+    name = syllabus_phase_names().get(phase, f"phase_{phase}")
+    return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
+
+
+def syllabus_milestone_tags() -> list[str]:
+    """Return the list of milestone tag keys, e.g. ['CCP', 'SAA', 'SAP']."""
+    return list(syllabus.get("milestones", {}).keys())
+
+
+def syllabus_milestone_colors() -> dict[str, str]:
+    """Return {milestone_tag: badge_color} from syllabus."""
+    return {
+        tag: info.get("badge_color", "#999999")
+        for tag, info in syllabus.get("milestones", {}).items()
+    }
+
+
+def syllabus_allowed_areas() -> set[str]:
+    """Return the set of allowed area names."""
+    return {d["name"] for d in syllabus.get("areas", [])}
+
+
+def syllabus_outline_plan() -> list[tuple[str, str, int, int]]:
+    """Return outline plan as list of (call_name, area, start_id, target_count)."""
+    return [
+        (e["call_name"], e["area"], e["start_id"], e["target_count"])
+        for e in syllabus.get("outline_plan", [])
+    ]
+
+
+def syllabus_analogy_block() -> str:
+    """Format the analogy_sources for prompt injection."""
+    sources = syllabus.get("analogy_sources", [])
+    lines = []
+    for s in sources:
+        lines.append(f"**{s['name']} ({s['context']})**")
+        lines.append(f"Use for: {s['use_for']}")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def syllabus_milestone_depth_block() -> str:
+    """Format milestone depth mapping for prompt injection."""
+    milestones = syllabus.get("milestones", {})
+    lines = []
+    for tag, info in milestones.items():
+        lines.append(f"- {tag} ({info['full_name']}): depth {info['depth']}")
+    return "\n".join(lines)
+
+
+def syllabus_phase_block() -> str:
+    """Format phase descriptions for prompt injection."""
+    phases = syllabus.get("phases", {})
+    lines = []
+    for num, info in sorted(phases.items(), key=lambda x: int(x[0])):
+        lines.append(f"Phase {num} — {info['name']}")
+        lines.append(f"  {info['description'].strip()}")
+        lines.append(f"  Target: {info.get('target_count', '?')} concepts")
+        types = info.get("required_types") or info.get("allowed_types", [])
+        lines.append(f"  Concept types: {', '.join(types)}")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def syllabus_area_block() -> str:
+    """Format areas for prompt injection."""
+    areas = syllabus.get("areas", [])
+    return "\n".join(f"- {d['name']}: {d['description']}" for d in areas)
+
+
+# Singletons — all scripts import these directly
 config: Config = _load()
+syllabus: dict = _load_syllabus()

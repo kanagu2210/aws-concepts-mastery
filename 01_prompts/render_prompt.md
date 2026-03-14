@@ -1,4 +1,4 @@
-# AWS Concept Mastery — Visual Renderer
+# {{PROJECT_NAME}} — Visual Renderer
 ## Stage 5 of 6 — Script to HTML
 ### render_prompt.md
 
@@ -12,7 +12,7 @@ a teaching script stored in `output/02_narrated/` by Stage 4 (Narrate).
 `run.py` reads the `.md` file, strips the YAML front matter,
 and injects the script content into this prompt as `{{MARKDOWN}}`.
 The front matter fields are injected separately as `{{TITLE}}`,
-`{{LAYER}}`, and `{{EXAMS}}`.
+`{{PHASE}}`, and `{{MILESTONES}}`.
 
 This HTML is the source for Stage 6 (Publish), which converts it
 to PDF using WeasyPrint. Design every page as if it will be viewed
@@ -23,10 +23,10 @@ TITLE:
 {{TITLE}}
 
 LAYER:
-{{LAYER}}
+{{PHASE}}
 
 EXAMS:
-{{EXAMS}}
+{{MILESTONES}}
 
 SOURCE CONTENT:
 {{MARKDOWN}}
@@ -378,7 +378,7 @@ Use for: L5 architectural patterns with clearly distinct sections.
 
 ## LAYER DESIGN HINTS
 
-The `{{LAYER}}` variable tells you which layer this concept belongs to.
+The `{{PHASE}}` variable tells you which layer this concept belongs to.
 Use this as one input — not the only input — to your design decisions.
 
 | Layer | Design tendency |
@@ -519,15 +519,15 @@ Regardless of design decisions, the cover must contain these
 elements in this visual hierarchy:
 
 ```
-Joy of Learning              ← series name, smallest
-{{LAYER}}                    ← layer name, medium
+{{SERIES_NAME}}              ← series name, smallest
+{{PHASE}}                    ← layer name, medium
 {{TITLE}}                    ← concept title, largest and most prominent
-[exam tags]                  ← rendered from {{EXAMS}}, see below
+[exam tags]                  ← rendered from {{MILESTONES}}, see below
 ```
 
 ## Exam tags
 
-`{{EXAMS}}` is a list of one or more values: CCP, SAA, SAP.
+`{{MILESTONES}}` is a list of one or more values: CCP, SAA, SAP.
 
 Render each exam as a small distinct badge or tag on the cover.
 The tags are visual — not prose. Think pill badges, stamp marks,
@@ -535,9 +535,7 @@ or corner labels. Each exam gets its own colour:
 
 | Exam | Colour |
 |------|--------|
-| CCP  | #27AE60 — green |
-| SAA  | #1A6FA8 — blue |
-| SAP  | #7D3C98 — purple |
+{{MILESTONE_COLOR_TABLE}}
 
 The tags show the reader at a glance which exams this concept
 covers. They are always visible on the cover — never hidden,
@@ -550,15 +548,15 @@ do not suppress it.
 
 ## Cover rules
 
-* "Joy of Learning" is the series name — smallest of the three text elements.
-* `{{LAYER}}` is the layer name (e.g. "Core Mechanisms", "Decision Patterns") — medium size.
+* "{{SERIES_NAME}}" is the series name — smallest of the three text elements.
+* `{{PHASE}}` is the layer name (e.g. "Core Mechanisms", "Decision Patterns") — medium size.
 * `{{TITLE}}` is the concept title — largest and most prominent.
 * Exam tags sit below or alongside the title — prominent but not
   competing with the title for dominance.
 * Visual hierarchy through design only — do not change any wording.
 * The cover treatment must match the chosen layout skeleton
   and typographic voice.
-* "Joy of Learning" is the only hardcoded string on the cover —
+* "{{SERIES_NAME}}" is the only hardcoded string on the cover —
   never hardcode the layer, title, or exam values.
 
 ---
@@ -581,15 +579,13 @@ within one group per page — don't mix groups.
 
 **Cool group** (more structured, better for mechanism and pattern content):
 * #f4f7fb — pale blue-grey (default page background)
-* #1A6FA8 — AWS blue (accent, headings or Board markers)
-* #27AE60 — green (CCP exam tag, positive signals)
-* #7D3C98 — purple (SAP exam tag, depth signals)
+* #1A6FA8 — blue (accent, headings or Board markers)
+* #27AE60 — green (positive signals)
+* #7D3C98 — purple (depth signals)
 * #1a1a1a — near-black (body text)
 
-**Exam tag colours (fixed — never change these):**
-* CCP → #27AE60 green
-* SAA → #1A6FA8 blue
-* SAP → #7D3C98 purple
+**Exam tag colours (fixed — from syllabus, never change these):**
+{{MILESTONE_TAG_CSS}}
 
 ## Default background and text
 
@@ -780,7 +776,7 @@ Design:
 * Pause markers do not all look the same on this page.
 * Section headings vary in treatment across the page.
 * Page uses 2–3 colours from one palette group, not all colours.
-* Exam tag colours are fixed: CCP green, SAA blue, SAP purple.
+* Exam tag colours match the syllabus-defined colours.
 * Cover displays: series name, layer name, concept title, exam tags.
 * No cover text hardcoded — all values from injected variables.
 * Layer design hint was considered.

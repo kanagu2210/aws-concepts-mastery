@@ -1,4 +1,4 @@
-# AWS Concept Mastery — Publisher
+# {{PROJECT_NAME}} — Publisher
 ## Stage 6 of 6 — HTML to PDF (Publish)
 ### publish_prompt.md
 
@@ -43,7 +43,7 @@ aws-concepts-mastery/
 │   ├── run_outline.py             ← one-time spine generation
 │   └── run.py                     ← stages 1–4 per spine (+ publish modes)
 ├── input/
-│   └── concept_spines.yaml        ← reviewed and approved spine list
+│   └── core_ideas.yaml        ← reviewed and approved spine list
 ├── output/
 │   ├── 01_concepts/               ← Stage 3 output (expanded concept YAMLs)
 │   ├── 02_narrated/               ← Stage 4 output (teaching script .md files)
@@ -292,7 +292,7 @@ For reference — the complete pipeline:
 
 | Stage | Name    | Triggered by              | Prompt              | Output                          |
 |-------|---------|---------------------------|---------------------|---------------------------------|
-| 1     | Outline | run_outline.py            | outline_prompt.md   | input/concept_spines.yaml       |
+| 1     | Outline | run_outline.py            | outline_prompt.md   | input/core_ideas.yaml       |
 | 2     | Curate  | run_curate.py             | (no prompt)         | terminal report — you edit yaml |
 | 3     | Expand  | run.py (default)          | expand_prompt.md    | output/01_concepts/             |
 | 4     | Narrate | run.py (default)          | narrate_prompt.md   | output/02_narrated/             |

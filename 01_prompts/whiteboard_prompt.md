@@ -1,4 +1,4 @@
-# AWS Concept Mastery — Whiteboard
+# {{PROJECT_NAME}} — Whiteboard
 ## Stage 4b — Narration to Progressive SVG Whiteboard
 ### whiteboard_prompt.md
 
@@ -22,8 +22,8 @@ No navigation. No buttons. No JavaScript. Pure static HTML.
 # INPUT
 
 TITLE: {{TITLE}}
-LAYER: {{LAYER}}
-EXAMS: {{EXAMS}}
+LAYER: {{PHASE}}
+EXAMS: {{MILESTONES}}
 
 SCRIPT:
 {{SCRIPT}}
@@ -241,9 +241,7 @@ body { font-family: 'Nunito', sans-serif; background: #f5f3ef; color: #2c2a26; }
 .wb-tags { display: flex; gap: 6px; }
 .exam-tag { padding: 2px 10px; border-radius: 10px; font-size: 11px;
   font-weight: 700; color: #fff; }
-.tag-ccp { background: #27AE60; }
-.tag-saa { background: #1A6FA8; }
-.tag-sap { background: #7D3C98; }
+{{MILESTONE_TAG_CSS}}
 .wb-panel { margin-bottom: 3rem; }
 .wb-panel-label { font-size: 11px; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.08em; color: #9c9690; margin-bottom: 0.6rem; }

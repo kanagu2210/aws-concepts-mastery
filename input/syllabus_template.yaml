@@ -1,0 +1,305 @@
+# ============================================================================
+# SYLLABUS TEMPLATE
+#
+# This is the single input file that drives the entire pipeline.
+# Copy this file, fill in every section, and the pipeline will generate
+# a complete mastery curriculum for your subject.
+#
+# ── HOW THE SCHEMA WORKS ────────────────────────────────────────────────────
+#
+#   MILESTONES → PHASES → AREAS → CONCEPTS
+#
+#   milestones  Proficiency checkpoints on your mastery journey.
+#               Could be certifications (CKA, AWS SAA), skill levels
+#               (Grade 5, Intermediate), or personal targets
+#               (Confident Home Cook, Concert Ready).
+#               Each milestone spans certain phases and has a depth range.
+#
+#   phases      The learning progression — what you learn first, second, etc.
+#               Knowledge builds: later phases assume earlier ones are mastered.
+#               Each phase has a cognitive purpose (foundations, mechanics,
+#               application, etc.) and restricts which concept types appear.
+#
+#   areas       Topic groupings within the subject.
+#               Concepts are categorised by area.
+#               The outline_plan maps areas to phases — that intersection
+#               is where concepts get generated.
+#
+# ── CONCEPT TYPES ───────────────────────────────────────────────────────────
+#
+#   mental_model  A framework with multiple interrelated parts.
+#                 E.g. "The 5-step evaluation chain", "The 3 pillars of X"
+#
+#   concept       A single idea, service, or technique. The most common type.
+#                 E.g. "What S3 is", "How a roux works", "What a Pod is"
+#
+#   contrast      Distinguishes between two or more things.
+#                 E.g. "SQS vs SNS", "Sauteing vs Stir-frying"
+#
+#   pattern       A reusable pattern combining multiple concepts.
+#                 E.g. "Event-driven pipeline", "Classical sonata form"
+#
+#   bridge        Maps knowledge to real-world performance (exams, interviews,
+#                 recitals, competitions). Does NOT teach new concepts.
+#
+# ── DEPTH STAGES ────────────────────────────────────────────────────────────
+#
+#   D1  Can explain and define clearly               (600–900 words)
+#   D2  Can distinguish from adjacent concepts        (800–1100 words)
+#   D3  Can reason about when/how to apply            (1100–1500 words)
+#   D4  Can design/compose under constraints          (1500–2000 words)
+#   D5  Can evaluate trade-offs at scale              (2000–2800 words)
+#
+# ============================================================================
+
+
+# ── Identity ────────────────────────────────────────────────────────────────
+# What is this curriculum called?
+
+project_name: ""
+# The full name of the project.
+# Example: "AWS Concept Mastery", "Piano Mastery", "Kubernetes Deep Dive"
+
+series_name: ""
+# A series or brand name that appears on rendered pages.
+# Example: "Joy of Learning", "Master Class Series"
+
+combined_pdf_name: ""
+# Filename for the combined PDF of all concepts.
+# Example: "aws_concept_mastery_complete.pdf"
+
+subject: ""
+# The full name of the subject being taught.
+# Example: "Amazon Web Services (AWS)", "Classical Piano", "Kubernetes"
+
+subject_short: ""
+# Short abbreviation used in prompts and display.
+# Example: "AWS", "Piano", "K8s"
+
+
+# ── Expert Role ─────────────────────────────────────────────────────────────
+# Who is the teacher? This is injected into every prompt as {{EXPERT_ROLE}}.
+# Write it as a role description — who are you, what do you know,
+# what is your teaching style?
+
+expert_role: >
+  # Example:
+  # You are a senior AWS Solutions Architect with 12 years of experience
+  # and a gift for teaching. You understand not just what each service does,
+  # but why it exists and how it relates to everything around it.
+
+
+# ── Milestones ──────────────────────────────────────────────────────────────
+# Proficiency checkpoints on the mastery journey.
+# Keys become the tags used in each concept's `milestones` list.
+#
+# For certification-based subjects: use cert codes (CKA, SAA, ABRSM5).
+# For skill-based subjects: use level names (beginner, intermediate, advanced).
+# For personal goals: use descriptive keys (home_cook, pro_kitchen).
+#
+# `phases` links each milestone to which phases it spans — this is the
+# explicit connection between "what you're working toward" and
+# "what you need to learn."
+
+milestones:
+  # MILESTONE_TAG:
+  #   full_name: ""
+  #   # Human-readable name of this milestone.
+  #
+  #   depth: ""
+  #   # Which depth stages this milestone requires. Format: "D1-D2", "D3-D4", etc.
+  #   # Lower milestones need shallower depth. Higher milestones need deeper.
+  #
+  #   phases: []
+  #   # Which phases contribute to reaching this milestone.
+  #   # Example: [1, 2, 3] means phases 1–3 are relevant.
+  #
+  #   badge_color: ""
+  #   # Hex colour for this milestone's badge in rendered output.
+  #   # Example: "#27AE60"
+
+
+# ── Phases ──────────────────────────────────────────────────────────────────
+# The learning progression. Each phase has a cognitive purpose.
+# Later phases assume earlier ones are mastered.
+#
+# Number your phases sequentially: 1, 2, 3, ...
+# There is no fixed limit — use as many as your subject needs.
+
+phases:
+  # N:
+  #   name: ""
+  #   # Short name for this phase.
+  #   # Example: "Foundations", "Core Mechanisms", "Service Mastery"
+  #
+  #   description: >
+  #     # What is the cognitive purpose of this phase?
+  #     # What does a learner who masters this phase understand?
+  #     # 2–4 sentences.
+  #
+  #   target_count: 0
+  #   # How many concepts should this phase contain?
+  #   # This is a target for outline generation, not a hard limit.
+  #
+  #   allowed_types: []
+  #   # Which concept_types may appear in this phase.
+  #   # Example: [mental_model, concept]
+  #   # Use `required_types` instead if ONLY specific types are valid.
+  #   # Example: required_types: [bridge]  (for a final "application" phase)
+  #
+  #   color_bg: ""
+  #   # Background colour for this phase in the dashboard.
+  #   # Example: "#e8f5e9"
+  #
+  #   color_text: ""
+  #   # Text colour for this phase in the dashboard.
+  #   # Example: "#2e7d32"
+  #
+  #   color_accent: ""
+  #   # Accent colour for this phase in the dashboard.
+  #   # Example: "#a5d6a7"
+
+
+# ── Areas ───────────────────────────────────────────────────────────────────
+# Topic groupings within the subject.
+# Each concept belongs to one area.
+# The outline_plan maps areas to phases.
+#
+# Include a catch-all area (like "Cross-Domain" or "General") for concepts
+# that span multiple areas.
+
+areas:
+  # - name: ""
+  #   description: ""
+  #   # Example:
+  #   # - name: "Security and Compliance"
+  #   #   description: "IAM, encryption, compliance frameworks"
+  #   # - name: "Cross-Domain"
+  #   #   description: "Concepts that span multiple areas"
+
+
+# ── Concept Schema ──────────────────────────────────────────────────────────
+# Rules for the metadata fields on each concept.
+
+concept_schema:
+
+  entity_field: ""
+  # The name of the domain-specific "thing" field in each concept.
+  # In AWS: "aws_service" (the service name).
+  # In cooking: "technique" (the cooking technique).
+  # In music: "skill" (the musical skill).
+  # In Kubernetes: "component" (the K8s component).
+  # This field appears on every concept with a value like "IAM", "Roux", "Scales", "Pod".
+
+  allowed_types:
+    # List of valid concept_type values. Standard set:
+    # - mental_model
+    # - concept
+    # - contrast
+    # - pattern
+    # - bridge
+
+  allowed_tiers:
+    # List of valid concept_tier values. Standard set:
+    # - foundation    (the base everything else builds on — ~15%)
+    # - core          (the main body of concepts — ~60%)
+    # - extension     (nuance, specifics, differentiators — ~25%)
+
+  allowed_roles:
+    # List of valid cognitive_role values. Standard set:
+    # - definition    (what it is and why it exists)
+    # - contrast      (how it differs from adjacent concepts)
+    # - model         (a framework with parts that relate)
+    # - application   (when and how to apply it)
+
+
+# ── Teaching Style ──────────────────────────────────────────────────────────
+
+analogy_sources:
+  # Real-world scenarios used for teaching analogies.
+  # Pick 3–5 sources that your audience will recognise.
+  # Every narrated script must use ONE of these — no others.
+  #
+  # - name: ""
+  #   context: ""
+  #   # Brief context for what this source represents.
+  #   # Example: "e-commerce + logistics"
+  #
+  #   use_for: ""
+  #   # What kinds of concepts this source is good for.
+  #   # Example: "scale, traffic spikes, inventory, ordering pipelines"
+
+teaching_notes: |
+  # Style rules injected into the narration prompt.
+  # These guide how scripts are written.
+  # Include rules about:
+  #   - How scripts open and close
+  #   - Markers to preserve (e.g. [Pause: ...])
+  #   - Banned phrases
+  #   - Word count targets per depth stage
+  #   - Analogy usage rules
+  #
+  # Example:
+  # - Open with a session frame, close with a 2-4 sentence summary.
+  # - [Pause: ...] markers are intentional — never remove them.
+  # - No banned phrases: "Let's explore", "In summary", "Key insight".
+  # - Depth stages control length: D1 = 600-900w, D3 = ~1400w, D5 = 2000-2800w.
+
+
+# ── Coverage Map ────────────────────────────────────────────────────────────
+# A checklist of everything the curriculum must cover.
+# For certification subjects: list every exam task/objective.
+# For skill subjects: list every competency or technique.
+# For any subject: list every topic that must appear in at least one concept.
+#
+# This is injected into the outline prompt so the AI can verify
+# complete coverage. Free-form text — use whatever structure fits.
+
+coverage_map: |
+  # Example for a certification:
+  # ## CKA (Certified Kubernetes Administrator)
+  # Task 1.1 — Cluster Architecture
+  # Task 1.2 — Installation and Configuration
+  # ...
+  #
+  # Example for a skill:
+  # ## Knife Skills
+  # - Julienne, brunoise, chiffonade
+  # - Proper grip and rocking motion
+  # ...
+
+
+# ── Outline Plan ────────────────────────────────────────────────────────────
+# Each entry drives one API call to generate concepts.
+# This is where PHASES and AREAS intersect.
+#
+# call_name format: "Phase N Part M: Description"
+#   The "Phase N Part M" prefix is parsed to determine output folders.
+#   The description after the colon guides what concepts to generate.
+#
+# area: must match one of the area names defined above.
+#
+# start_id: the first concept ID for this batch.
+#   IDs are globally sequential across all entries. Never overlap.
+#
+# target_count: how many concepts to generate in this batch.
+#   Typically 10–20 per call. Keep consistent.
+#
+# Tips:
+#   - Order entries by phase, then by area within each phase.
+#   - Sum of all target_counts = total concepts in your curriculum.
+#   - Each entry generates one API call, so more entries = more cost
+#     but finer control over what gets generated.
+
+outline_plan:
+  # - call_name: "Phase 1 Part 1: ..."
+  #   area: ""
+  #   start_id: 1
+  #   target_count: 20
+  #
+  # - call_name: "Phase 1 Part 2: ..."
+  #   area: ""
+  #   start_id: 21
+  #   target_count: 20
+  #
+  # ... continue for all phases and areas ...

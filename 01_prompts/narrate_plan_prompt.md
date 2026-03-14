@@ -1,4 +1,4 @@
-# AWS Concept Mastery — Narration Planner
+# {{PROJECT_NAME}} — Narration Planner
 ## Stage 4a of 6 — Part Planning for Multipart Narration
 ### narrate_plan_prompt.md
 

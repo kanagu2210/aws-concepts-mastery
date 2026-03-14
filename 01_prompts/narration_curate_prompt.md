@@ -1,4 +1,4 @@
-# AWS Concept Mastery — Narration Seam Repair
+# {{PROJECT_NAME}} — Narration Seam Repair
 ## Stage 4c — Curate
 ### curate_prompt.md
 

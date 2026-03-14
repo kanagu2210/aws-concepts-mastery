@@ -1,10 +1,13 @@
 """
 02_pipeline/run_outline.py
-Stage 1 — Generate all 1000 concept spines in 51 sequential API calls.
+Stage 1 — Generate concept spines via sequential API calls.
+
+The number and structure of calls is defined in input/syllabus.yaml
+under the `call_plan` key.
 
 Usage:
     python 02_pipeline/run_outline.py --dry-run   # show call plan, no API calls
-    python 02_pipeline/run_outline.py             # run all 51 calls
+    python 02_pipeline/run_outline.py             # run all calls
     python 02_pipeline/run_outline.py --resume    # skip calls already backed up
     python 02_pipeline/run_outline.py --call 5    # run a single call by number (1-indexed)
 
@@ -17,7 +20,6 @@ Output:
 from __future__ import annotations
 
 import argparse
-import shutil
 import sys
 import time
 from pathlib import Path
@@ -28,8 +30,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from utils.api import call_claude
-from utils.call_plan import CALL_PLAN
-from utils.config import config
+from utils.config import config, syllabus, syllabus_outline_plan
 from utils.usage_log import compute_cost, log_usage
 
 
@@ -41,7 +42,47 @@ def _load_prompt() -> str:
     prompt_path = config.paths.prompts_dir / "outline_prompt.md"
     if not prompt_path.exists():
         raise FileNotFoundError(f"Prompt not found: {prompt_path}")
-    return prompt_path.read_text(encoding="utf-8")
+    text = prompt_path.read_text(encoding="utf-8")
+
+    # Inject syllabus variables into the outline prompt
+    from utils.config import (
+        syllabus_analogy_block,
+        syllabus_milestone_depth_block,
+        syllabus_phase_block,
+        syllabus_area_block,
+        syllabus_milestone_tags,
+    )
+
+    replacements = {
+        "{{SUBJECT}}":           syllabus.get("subject", ""),
+        "{{SUBJECT_SHORT}}":     syllabus.get("subject_short", ""),
+        "{{PROJECT_NAME}}":      syllabus.get("project_name", ""),
+        "{{EXPERT_ROLE}}":       syllabus.get("expert_role", "").strip(),
+        "{{PHASE_DESCRIPTIONS}}": syllabus_phase_block(),
+        "{{AREA_LIST}}":       syllabus_area_block(),
+        "{{MILESTONE_DEPTH_MAP}}":    syllabus_milestone_depth_block(),
+        "{{COVERAGE_MAP}}": syllabus.get("coverage_map", "").strip(),
+        "{{TEACHING_NOTES}}":    syllabus.get("teaching_notes", "").strip(),
+        "{{ENTITY_FIELD}}":     syllabus.get("concept_schema", {}).get("entity_field", "service"),
+        "{{ALLOWED_TYPES}}": ", ".join(
+            syllabus.get("concept_schema", {}).get("allowed_types", [])
+        ),
+        "{{ALLOWED_TIERS}}": ", ".join(
+            syllabus.get("concept_schema", {}).get("allowed_tiers", [])
+        ),
+        "{{ALLOWED_ROLES}}": ", ".join(
+            syllabus.get("concept_schema", {}).get("allowed_roles", [])
+        ),
+        "{{ALLOWED_MILESTONES}}": ", ".join(syllabus_milestone_tags()),
+        "{{ALLOWED_AREAS}}": "\n".join(
+            f"  {d['name']}" for d in syllabus.get("areas", [])
+        ),
+    }
+
+    for placeholder, value in replacements.items():
+        text = text.replace(placeholder, value)
+
+    return text
 
 
 def _backup_path(call_index: int) -> Path:
@@ -128,8 +169,10 @@ def _merge_to_master(new_spines: list[dict]) -> None:
 
 
 def _print_plan(calls: list[tuple]) -> None:
+    project_name = syllabus.get("project_name", "Concept Mastery")
     print(f"\n{'─' * 70}")
-    print(f"  run_outline.py — {len(calls)} calls planned")
+    print(f"  {project_name} — Outline Generator")
+    print(f"  {len(calls)} calls planned")
     print(f"{'─' * 70}")
     total = 0
     for i, (name, _, start, count) in enumerate(calls, 1):
@@ -149,13 +192,16 @@ def run(args: argparse.Namespace) -> None:
     config.paths.backups_outline_dir.mkdir(parents=True, exist_ok=True)
     config.paths.logs_dir.mkdir(parents=True, exist_ok=True)
 
+    # Load call plan from syllabus
+    full_call_plan = syllabus_outline_plan()
+
     # Filter to a single call if --call N was passed
-    calls = CALL_PLAN
+    calls = full_call_plan
     if args.call is not None:
-        if not (1 <= args.call <= len(CALL_PLAN)):
-            print(f"[error] --call must be between 1 and {len(CALL_PLAN)}", file=sys.stderr)
+        if not (1 <= args.call <= len(full_call_plan)):
+            print(f"[error] --call must be between 1 and {len(full_call_plan)}", file=sys.stderr)
             sys.exit(1)
-        calls = [CALL_PLAN[args.call - 1]]
+        calls = [full_call_plan[args.call - 1]]
 
     _print_plan(calls)
 
@@ -164,8 +210,8 @@ def run(args: argparse.Namespace) -> None:
         return
 
     for i, (call_name, domain, start_id, target) in enumerate(calls, 1):
-        # Use the original index in CALL_PLAN for backup file naming
-        plan_index = CALL_PLAN.index((call_name, domain, start_id, target)) + 1
+        # Use the original index in full_call_plan for backup file naming
+        plan_index = full_call_plan.index((call_name, domain, start_id, target)) + 1
         backup = _backup_path(plan_index)
 
         # Resume: skip if backup already exists
@@ -173,7 +219,7 @@ def run(args: argparse.Namespace) -> None:
             print(f"[skip] call {plan_index:02d}: {call_name} — backup exists")
             continue
 
-        print(f"\n[call {plan_index:02d}/{len(CALL_PLAN)}] {call_name}")
+        print(f"\n[call {plan_index:02d}/{len(full_call_plan)}] {call_name}")
         print(f"         IDs {start_id}–{start_id + target - 1}  target={target}")
 
         existing_slugs = _load_existing_slugs()
@@ -232,8 +278,9 @@ def run(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
+    total_calls = len(syllabus_outline_plan())
     parser = argparse.ArgumentParser(
-        description="Stage 1 — Generate concept spines (51 API calls)"
+        description=f"Stage 1 — Generate concept spines ({total_calls} API calls)"
     )
     parser.add_argument(
         "--dry-run", action="store_true",

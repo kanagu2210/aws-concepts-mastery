@@ -20,7 +20,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from utils.config import config  # noqa: F401
+from utils.config import (
+    config,
+    syllabus,
+    syllabus_phase_names,
+    syllabus_milestone_tags,
+    syllabus_milestone_colors,
+)
 from pipeline_common import (
     _load_spines,
     _part_subdir,  # noqa: F401
@@ -30,31 +36,22 @@ from pipeline_common import (
 )
 
 
-LAYER_NAMES = {
-    1: "Foundations",
-    2: "Core Mechanisms",
-    3: "Service Mastery",
-    4: "Decision Patterns",
-    5: "Architectural Patterns",
-    6: "Exam & Interview Bridges",
-}
+# Derive all display values from syllabus
+PHASE_NAMES = syllabus_phase_names()
 
-LAYER_COLORS = {
-    1: ("#e8f5e9", "#2e7d32", "#a5d6a7"),
-    2: ("#e3f2fd", "#1565c0", "#90caf9"),
-    3: ("#fff8e1", "#f57f17", "#ffe082"),
-    4: ("#fce4ec", "#880e4f", "#f48fb1"),
-    5: ("#ede7f6", "#4527a0", "#b39ddb"),
-    6: ("#e0f7fa", "#006064", "#80deea"),
-}
+PHASE_COLORS = {}
+for _lnum, _linfo in syllabus.get("phases", {}).items():
+    PHASE_COLORS[int(_lnum)] = (
+        _linfo.get("color_bg", "#f5f5f5"),
+        _linfo.get("color_text", "#333333"),
+        _linfo.get("color_accent", "#999999"),
+    )
 
-SPINE_TYPE_LABELS = {
-    "mental_model": "Model",
-    "concept": "Concept",
-    "contrast": "Contrast",
-    "pattern": "Pattern",
-    "bridge": "Bridge",
-}
+# Build spine type labels from the allowed list (capitalize first letter)
+_allowed_types = syllabus.get("concept_schema", {}).get("allowed_types", [])
+SPINE_TYPE_LABELS = {t: t.replace("_", " ").title() for t in _allowed_types}
+
+ENTITY_FIELD = syllabus.get("concept_schema", {}).get("entity_field", "service")
 
 
 def build_spine_data(spines: list[dict]) -> list[dict]:
@@ -94,13 +91,13 @@ def generate_html(spines: list[dict]) -> str:
             {
                 "id": s["id"],
                 "title": s.get("title", ""),
-                "layer": s.get("layer", 0),
-                "layer_name": s.get("layer_name", ""),
-                "domain": s.get("domain", "General"),
-                "service": s.get("aws_service", "General"),
+                "phase": s.get("phase", 0),
+                "phase_name": s.get("phase_name", ""),
+                "area": s.get("area", "General"),
+                "service": s.get(ENTITY_FIELD, "General"),
                 "slug": s.get("slug", ""),
-                "spine_type": s.get("spine_type", "concept"),
-                "exams": s.get("exams") or [],
+                "concept_type": s.get("concept_type", "concept"),
+                "milestones": s.get("milestones") or [],
                 "tier": s.get("concept_tier", ""),
                 "has_render": s["has_render"],
                 "has_whiteboard": s["has_whiteboard"],
@@ -118,7 +115,7 @@ def generate_html(spines: list[dict]) -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AWS Concept Mastery</title>
+<title>{syllabus.get("project_name", "Concept Mastery")}</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {{
@@ -1404,8 +1401,8 @@ body {{
   <header class="topbar">
     <div class="topbar-row1">
       <div class="brand">
-        <span class="brand-aws">AWS</span>
-        <span>Concept Mastery</span>
+        <span class="brand-aws">{syllabus.get("subject_short", "")}</span>
+        <span>{syllabus.get("project_name", "Concept Mastery").replace(syllabus.get("subject_short", ""), "").strip()}</span>
         <span class="brand-sub">/ Dashboard</span>
       </div>
 
@@ -1725,7 +1722,7 @@ function boardIcon() {{
 
 function makeCard(s) {{
   const pass = getPass(s.id);
-  const exams = (s.exams || []).map(e => `<span class="exam-tag et-${{String(e).toLowerCase()}}">${{escapeHtml(e)}}</span>`).join("");
+  const exams = (s.milestones || []).map(e => `<span class="exam-tag et-${{String(e).toLowerCase()}}">${{escapeHtml(e)}}</span>`).join("");
   const readClick = s.has_render ? `onclick="openPanel('${{s.render_path}}','${{escapeJs(s.title)}}','read',${{s.id}})"` : "";
   const boardClick = s.has_whiteboard ? `onclick="openPanel('${{s.whiteboard_path}}','${{escapeJs(s.title)}}','board',${{s.id}})"` : "";
   const passClass = pass===0 ? "" : pass===1 ? " pass1" : pass===2 ? " pass2" : " pass3";
@@ -1734,7 +1731,7 @@ function makeCard(s) {{
     <div class="card-top">
       <span class="card-id">#${{String(s.id).padStart(4,"0")}}</span>
       <span class="status-dot ${{sdClass(s)}}" title="${{sdTitle(s)}}"></span>
-      <span class="type-tag tt-${{escapeAttr(s.spine_type)}}">${{escapeHtml(typeLabel(s.spine_type))}}</span>
+      <span class="type-tag tt-${{escapeAttr(s.concept_type)}}">${{escapeHtml(typeLabel(s.concept_type))}}</span>
     </div>
 
     <div class="card-title">${{escapeHtml(s.title)}}</div>
@@ -1779,10 +1776,10 @@ function makeListRow(s) {{
         </div>
       </div>
       <div class="spine-list-meta">
-        <span class="spine-mini-tag">L${{s.layer}}</span>
-        <span class="spine-mini-tag">${{escapeHtml(s.domain)}}</span>
+        <span class="spine-mini-tag">P${{s.phase}}</span>
+        <span class="spine-mini-tag">${{escapeHtml(s.area)}}</span>
         <span class="spine-mini-tag">${{escapeHtml(s.service)}}</span>
-        <span class="spine-mini-tag">${{escapeHtml(typeLabel(s.spine_type))}}</span>
+        <span class="spine-mini-tag">${{escapeHtml(typeLabel(s.concept_type))}}</span>
         <span class="spine-mini-tag">${{passLabel}}</span>
       </div>
     </li>
@@ -1790,8 +1787,8 @@ function makeListRow(s) {{
 }}
 
 function matchesFilters(s) {{
-  if (activeFilter.layer && s.layer !== activeFilter.layer) return false;
-  if (activeFilter.domain && s.domain !== activeFilter.domain) return false;
+  if (activeFilter.phase && s.phase !== activeFilter.phase) return false;
+  if (activeFilter.area && s.area !== activeFilter.area) return false;
   if (activeFilter.service && s.service !== activeFilter.service) return false;
 
   const p = getPass(s.id);
@@ -1809,9 +1806,9 @@ function matchesFilters(s) {{
     const hit =
       String(s.title || "").toLowerCase().includes(q) ||
       String(s.id).includes(q) ||
-      String(s.domain || "").toLowerCase().includes(q) ||
+      String(s.area || "").toLowerCase().includes(q) ||
       String(s.service || "").toLowerCase().includes(q) ||
-      String(s.spine_type || "").toLowerCase().includes(q);
+      String(s.concept_type || "").toLowerCase().includes(q);
 
     if (!hit) return false;
   }}
@@ -1848,17 +1845,17 @@ function renderContent() {{
     return;
   }}
 
-  const byLayer = {{}};
+  const byPhase = {{}};
   visible.forEach(s => {{
-    if (!byLayer[s.layer]) byLayer[s.layer] = {{}};
-    if (!byLayer[s.layer][s.domain]) byLayer[s.layer][s.domain] = {{}};
-    if (!byLayer[s.layer][s.domain][s.service]) byLayer[s.layer][s.domain][s.service] = [];
-    byLayer[s.layer][s.domain][s.service].push(s);
+    if (!byPhase[s.phase]) byPhase[s.phase] = {{}};
+    if (!byPhase[s.phase][s.area]) byPhase[s.phase][s.area] = {{}};
+    if (!byPhase[s.phase][s.area][s.service]) byPhase[s.phase][s.area][s.service] = [];
+    byPhase[s.phase][s.area][s.service].push(s);
   }});
 
   let html = "";
 
-  Object.keys(byLayer).sort((a, b) => a - b).forEach(ln => {{
+  Object.keys(byPhase).sort((a, b) => a - b).forEach(ln => {{
     const L = LAYER_META[ln] || {{
       name: "Layer " + ln,
       color: "#888",
@@ -1866,11 +1863,11 @@ function renderContent() {{
       border: "rgba(128,128,128,0.2)"
     }};
 
-    const allLayerSpines = SPINES.filter(s => s.layer == ln);
-    const nPct = allLayerSpines.length ? Math.round(allLayerSpines.filter(s => s.has_render).length / allLayerSpines.length * 100) : 0;
-    const bPct = allLayerSpines.length ? Math.round(allLayerSpines.filter(s => s.has_whiteboard).length / allLayerSpines.length * 100) : 0;
-    const dPct = allLayerSpines.length ? Math.round(allLayerSpines.filter(s => getPass(s.id) >= 3).length / allLayerSpines.length * 100) : 0;
-    const visCount = visible.filter(s => s.layer == ln).length;
+    const allPhaseSpines = SPINES.filter(s => s.phase == ln);
+    const nPct = allPhaseSpines.length ? Math.round(allPhaseSpines.filter(s => s.has_render).length / allPhaseSpines.length * 100) : 0;
+    const bPct = allPhaseSpines.length ? Math.round(allPhaseSpines.filter(s => s.has_whiteboard).length / allPhaseSpines.length * 100) : 0;
+    const dPct = allPhaseSpines.length ? Math.round(allPhaseSpines.filter(s => getPass(s.id) >= 3).length / allPhaseSpines.length * 100) : 0;
+    const visCount = visible.filter(s => s.phase == ln).length;
 
     html += `<div class="layer-block" id="lb-${{ln}}">
       <div class="layer-hdr" style="background:${{L.bg}};border-color:${{L.border}}" onclick="toggleCollapse('lb-${{ln}}')">
@@ -1900,9 +1897,9 @@ function renderContent() {{
       </div>
       <div class="layer-body">`;
 
-    Object.keys(byLayer[ln]).sort().forEach(dn => {{
+    Object.keys(byPhase[ln]).sort().forEach(dn => {{
       const dc = DOMAIN_COLORS[dn] || "#8b90a8";
-      const domainVisible = Object.values(byLayer[ln][dn]).flat().length;
+      const domainVisible = Object.values(byPhase[ln][dn]).flat().length;
       const domainKey = dn.replace(/[^a-zA-Z0-9]/g, "_");
 
       html += `<div class="domain-block" id="db-${{ln}}-${{domainKey}}">
@@ -1914,8 +1911,8 @@ function renderContent() {{
         </div>
         <div class="domain-body">`;
 
-      Object.keys(byLayer[ln][dn]).sort().forEach(svc => {{
-        const svcCards = byLayer[ln][dn][svc];
+      Object.keys(byPhase[ln][dn]).sort().forEach(svc => {{
+        const svcCards = byPhase[ln][dn][svc];
         const svcKey = svc.replace(/[^a-zA-Z0-9]/g, "_");
 
         html += `<div class="service-block" id="sb-${{ln}}-${{domainKey}}-${{svcKey}}">
@@ -1992,7 +1989,7 @@ function updateFooter() {{
   const layersEl = document.getElementById("footer-layers");
   if (!layersEl) return;
 
-  const layerNums = [...new Set(SPINES.map(s => s.layer))].sort((a, b) => a - b);
+  const phaseNums = [...new Set(SPINES.map(s => s.phase))].sort((a, b) => a - b);
   const L_COLORS = {{
     1:"#00b894",
     2:"#74b9ff",
@@ -2002,8 +1999,8 @@ function updateFooter() {{
     6:"#55efc4"
   }};
 
-  layersEl.innerHTML = layerNums.map(ln => {{
-    const ls = SPINES.filter(s => s.layer === ln);
+  layersEl.innerHTML = phaseNums.map(ln => {{
+    const ls = SPINES.filter(s => s.phase === ln);
     const lDone = ls.filter(s => getPass(s.id) >= 3).length;
     const lPct = ls.length ? Math.round(lDone / ls.length * 100) : 0;
     const color = L_COLORS[ln] || "#888";
@@ -2022,30 +2019,30 @@ function updateBreadcrumb() {{
   const bc = document.getElementById("breadcrumb");
   const parts = [];
 
-  if (activeFilter.layer || activeFilter.domain || activeFilter.service) {{
+  if (activeFilter.phase || activeFilter.area || activeFilter.service) {{
     parts.push(`<span class="bc-item" onclick="clearFilter('all')">All layers</span>`);
   }} else {{
     parts.push(`<span class="bc-current">All layers</span>`);
   }}
 
-  if (activeFilter.layer) {{
-    const L = LAYER_META[activeFilter.layer];
-    if (activeFilter.domain || activeFilter.service) {{
+  if (activeFilter.phase) {{
+    const L = LAYER_META[activeFilter.phase];
+    if (activeFilter.area || activeFilter.service) {{
       parts.push(`<span class="bc-sep">›</span>`);
-      parts.push(`<span class="bc-item" onclick="clearFilter('domain')">L${{activeFilter.layer}} ${{escapeHtml(L?.name || "")}}</span>`);
+      parts.push(`<span class="bc-item" onclick="clearFilter('domain')">L${{activeFilter.phase}} ${{escapeHtml(L?.name || "")}}</span>`);
     }} else {{
       parts.push(`<span class="bc-sep">›</span>`);
-      parts.push(`<span class="bc-current">L${{activeFilter.layer}} ${{escapeHtml(L?.name || "")}}</span>`);
+      parts.push(`<span class="bc-current">L${{activeFilter.phase}} ${{escapeHtml(L?.name || "")}}</span>`);
     }}
   }}
 
-  if (activeFilter.domain) {{
+  if (activeFilter.area) {{
     if (activeFilter.service) {{
       parts.push(`<span class="bc-sep">›</span>`);
-      parts.push(`<span class="bc-item" onclick="clearFilter('service')">${{escapeHtml(activeFilter.domain)}}</span>`);
+      parts.push(`<span class="bc-item" onclick="clearFilter('service')">${{escapeHtml(activeFilter.area)}}</span>`);
     }} else {{
       parts.push(`<span class="bc-sep">›</span>`);
-      parts.push(`<span class="bc-current">${{escapeHtml(activeFilter.domain)}}</span>`);
+      parts.push(`<span class="bc-current">${{escapeHtml(activeFilter.area)}}</span>`);
     }}
   }}
 
@@ -2059,8 +2056,8 @@ function updateBreadcrumb() {{
 
 function clearFilter(level) {{
   if (level === "all") activeFilter = {{ layer:null, domain:null, service:null }};
-  if (level === "domain") activeFilter = {{ layer:activeFilter.layer, domain:null, service:null }};
-  if (level === "service") activeFilter = {{ layer:activeFilter.layer, domain:activeFilter.domain, service:null }};
+  if (level === "area") activeFilter = {{ layer:activeFilter.phase, domain:null, service:null }};
+  if (level === "service") activeFilter = {{ layer:activeFilter.phase, domain:activeFilter.area, service:null }};
   renderContent();
   buildSidenav();
 }}
@@ -2091,12 +2088,12 @@ function updateCardBadge(id) {{
 
 function buildSidenav() {{
   const nav = document.getElementById("sidenav");
-  const layerNums = [...new Set(SPINES.map(s => s.layer))].sort((a, b) => a - b);
+  const phaseNums = [...new Set(SPINES.map(s => s.phase))].sort((a, b) => a - b);
 
-  nav.innerHTML = layerNums.map(ln => {{
+  nav.innerHTML = phaseNums.map(ln => {{
     const L = LAYER_META[ln] || {{ name: "Layer " + ln, color: "#888" }};
-    const domains = [...new Set(SPINES.filter(s => s.layer === ln).map(s => s.domain))].sort();
-    const isLayerActive = activeFilter.layer === ln;
+    const domains = [...new Set(SPINES.filter(s => s.phase === ln).map(s => s.area))].sort();
+    const isLayerActive = activeFilter.phase === ln;
 
     return `<div class="sn-section">
       <div class="sn-layer-item${{isLayerActive ? " expanded" : ""}}"
@@ -2104,25 +2101,25 @@ function buildSidenav() {{
         onclick="toggleSnLayer(this, ${{ln}})">
         <span class="sn-ldot" style="background:${{L.color}}"></span>
         <span class="sn-lname">L${{ln}} ${{escapeHtml(L.name)}}</span>
-        <span class="sn-lcount">${{SPINES.filter(s => s.layer === ln).length}}</span>
+        <span class="sn-lcount">${{SPINES.filter(s => s.phase === ln).length}}</span>
         <span class="sn-chevron">›</span>
       </div>
       <div class="sn-children">
         ${{domains.map(dn => {{
-          const svcs = [...new Set(SPINES.filter(s => s.layer === ln && s.domain === dn).map(s => s.service))].sort();
-          const isDomActive = activeFilter.domain === dn && activeFilter.layer === ln;
+          const svcs = [...new Set(SPINES.filter(s => s.phase === ln && s.area === dn).map(s => s.service))].sort();
+          const isDomActive = activeFilter.area === dn && activeFilter.phase === ln;
           const dc = DOMAIN_COLORS[dn] || "#8b90a8";
 
           return `<div class="sn-domain-item${{isDomActive ? " expanded sel" : ""}}"
             onclick="toggleSnDomain(this, ${{ln}}, '${{escapeJs(dn)}}')">
             <span class="sn-domain-dot" style="background:${{dc}}"></span>
             <span class="sn-dname">${{escapeHtml(dn)}}</span>
-            <span class="sn-dcount">${{SPINES.filter(s => s.layer === ln && s.domain === dn).length}}</span>
+            <span class="sn-dcount">${{SPINES.filter(s => s.phase === ln && s.area === dn).length}}</span>
             <span class="sn-chevron" style="font-size:13px">›</span>
           </div>
           <div class="sn-svc-children">
             ${{svcs.map(sv => {{
-              const isActive = activeFilter.service === sv && activeFilter.domain === dn;
+              const isActive = activeFilter.service === sv && activeFilter.area === dn;
               return `<div class="sn-svc-item${{isActive ? " sel" : ""}}"
                 onclick="setFilter(${{ln}}, '${{escapeJs(dn)}}', '${{escapeJs(sv)}}')">
                 <span class="sn-svc-dot"></span>${{escapeHtml(sv)}}

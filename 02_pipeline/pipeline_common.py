@@ -9,6 +9,7 @@ run_whiteboard.py and run_publish.py try to import from run.py.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 from typing import Optional
@@ -17,18 +18,53 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from utils.call_plan import get_part_folder
-from utils.config import config
+from utils.config import config, syllabus_outline_plan
+
+
+# ---------------------------------------------------------------------------
+# Part-folder derivation from syllabus outline_plan
+# ---------------------------------------------------------------------------
+
+_PART_INDEX: dict[int, str] | None = None
+
+
+def _build_part_index() -> dict[int, str]:
+    """
+    Build a mapping: spine_id -> 'phase_N/part_N' from the syllabus outline_plan.
+    Each outline_plan entry specifies call_name (contains 'Phase X Part Y'),
+    start_id, and target_count.
+    """
+    index: dict[int, str] = {}
+    for call_name, _area, start_id, target in syllabus_outline_plan():
+        # Parse "Phase X Part Y" from the call name
+        m = re.match(r"Phase\s+(\d+)\s+Part\s+(\d+)", call_name, re.IGNORECASE)
+        if m:
+            folder = f"phase_{int(m.group(1))}/part_{int(m.group(2))}"
+        else:
+            # Fallback: slugify the call name prefix
+            prefix = call_name.split(":")[0].strip().lower()
+            folder = re.sub(r"[^a-z0-9]+", "_", prefix).strip("_")
+        for sid in range(start_id, start_id + target):
+            index[sid] = folder
+    return index
+
+
+def _part_subdir(spine_id: int) -> str:
+    """Return e.g. 'phase_3/part_7' for a given spine_id."""
+    global _PART_INDEX
+    if _PART_INDEX is None:
+        _PART_INDEX = _build_part_index()
+    if spine_id not in _PART_INDEX:
+        raise ValueError(
+            f"spine_id={spine_id} not found in syllabus outline_plan. "
+            "Check input/syllabus.yaml outline_plan entries."
+        )
+    return _PART_INDEX[spine_id]
 
 
 # ---------------------------------------------------------------------------
 # Path helpers
 # ---------------------------------------------------------------------------
-
-def _part_subdir(spine_id: int) -> str:
-    """Return e.g. 'layer_3/part_7' for a given spine_id."""
-    return get_part_folder(spine_id)
-
 
 def concept_path(spine_id: int, slug: str) -> Path:
     return config.paths.output_concepts_dir / _part_subdir(spine_id) / f"{spine_id:04d}_{slug}.yaml"
@@ -95,7 +131,7 @@ def _select_spines(args: argparse.Namespace) -> list[dict]:
       --spine N          single spine by ID
       --spines N N N     multiple spine IDs
       --from N --to N    inclusive ID range (either bound optional)
-      --layer N          all spines in a layer
+      --layer N          all spines in a phase (--layer kept as CLI shorthand)
       --all              every spine
     """
     if getattr(args, "spine", None) is not None:
@@ -107,7 +143,7 @@ def _select_spines(args: argparse.Namespace) -> list[dict]:
     all_spines = _load_spines()
 
     if getattr(args, "layer", None) is not None:
-        all_spines = [s for s in all_spines if s.get("layer") == args.layer]
+        all_spines = [s for s in all_spines if s.get("phase") == args.layer]
 
     from_id = getattr(args, "from_id", None)
     to_id   = getattr(args, "to_id",   None)
